@@ -10,26 +10,29 @@ const subscribeUserController = async (req, res, next) => {
     try {
         const { email } = req.body;
         const subscriber = await subscribersListRepository_1.default.saveSubscibers({ email });
-        const token = jsonwebtoken_1.default.sign({
-            email: subscriber.email
-        }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const token = jsonwebtoken_1.default.sign({ email: subscriber.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
         const unsubscribeLink = `${process.env.CLIENT_URL}email=${subscriber.email}/unsubscriber?token=${token}`;
-        await (0, emailService_1.sendEmail)(email, "User Subscription", "Subscription Confirmed", `<p>Dear <b>${subscriber.email}</b>,</p>
-            <p>Thank you for subscribing to Kickside Rwanda! You are now part of our community and will receive updates, news, and exclusive offers from us.</p>
-            <p>If you ever wish to unsubscribe, you can do so anytime by clicking the link below:</p>
-            <p><a href="${unsubscribeLink}" style="color: #d9534f; font-weight: bold;">Unsubscribe</a></p>
-            <br>
-            <p>Best regards,</p>
-            <p><b>Kickside Rwanda Team</b></p>`);
-        res.status(201).json({
+        try {
+            await (0, emailService_1.sendEmail)(email, "User Subscription", "Subscription Confirmed", `<p>Dear <b>${subscriber.email}</b>,</p>
+        <p>Thank you for subscribing to Kickside Rwanda! You are now part of our community and will receive updates, news, and exclusive offers from us.</p>
+        <p>If you ever wish to unsubscribe, you can do so anytime by clicking the link below:</p>
+        <p><a href="${unsubscribeLink}" style="color: #d9534f; font-weight: bold;">Unsubscribe</a></p>
+        <br>
+        <p>Best regards,</p>
+        <p><b>Kickside Rwanda Team</b></p>`);
+        }
+        catch (emailError) {
+            console.error("❌ Failed to send subscription email:", emailError);
+        }
+        return res.status(201).json({
             status: 201,
-            message: 'Subscription Sent Successfully'
+            message: 'Subscription created successfully (email send attempt logged)'
         });
     }
     catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             status: 500,
-            message: error.message
+            message: error.message || 'Internal server error'
         });
     }
 };

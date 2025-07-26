@@ -16,5 +16,6 @@ authRoute.post("/reset-password", (0, bodyValidation_1.default)(authValidations_
 authRoute.post("/logout", (0, authorization_1.userAuthorization)(["Admin", "Journalist", "Editor"]), authControllers_1.default.userLogout);
 authRoute.get("/get-profile", (0, authorization_1.userAuthorization)(["Admin", "Journalist", "Editor"]), authControllers_1.default.getUserProfile);
 authRoute.put("/update-profile", (0, authorization_1.userAuthorization)(["Admin", "Editor", "Journalist"]), authControllers_1.default.updateUserProfile);
+authRoute.put("/change-password", (0, authorization_1.userAuthorization)(["Admin", "Editor", "Journalist"]), (0, bodyValidation_1.default)(authValidations_1.changePasswordSchema), authControllers_1.default.changePassword);
 exports.default = authRoute;
 //# sourceMappingURL=authRoutes.js.map

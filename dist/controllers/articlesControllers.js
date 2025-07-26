@@ -43,12 +43,14 @@ const getSingleArticle = async (req, res) => {
         const newViews = article.views + 1;
         await articlesRepositories_1.default.editArticle(article._id, { views: newViews });
         article = await articlesRepositories_1.default.findArticleByAttribute("_id", article._id);
+        const related = await articlesRepositories_1.default.findArticleRelatedArticles(article._id, article.category);
         return res.status(200).json({
             status: 200,
             message: "Article retrieved successfully",
             data: {
                 article: article,
-                comments: req.comments
+                comments: req.comments,
+                related
             }
         });
     }
@@ -270,21 +272,67 @@ const journalistAnalytics = async (req, res) => {
     }
 };
 const getAuthorProfile = async (req, res) => {
-    const { username } = req.params;
-    const user = await authRepositories_1.default.findUserByUsernames(username);
-    const plainUser = user.toJSON();
-    delete plainUser.password;
-    const articles = await authRepositories_1.default.findArticlesByAuthor(user._id);
-    const relatedJournalists = await authRepositories_1.default.findRelatedJournalists(user._id);
-    return res.status(200).json({
-        status: 200,
-        message: "Author Details Fetched Successfully",
-        data: {
-            author: plainUser,
-            articles,
-            relatedJournalists,
-        },
-    });
+    try {
+        const { username } = req.params;
+        const user = await authRepositories_1.default.findUserByUsernames(username);
+        const plainUser = user.toJSON();
+        delete plainUser.password;
+        const articles = await authRepositories_1.default.findArticlesByAuthor(user._id);
+        const relatedJournalists = await authRepositories_1.default.findRelatedJournalists(user._id);
+        return res.status(200).json({
+            status: 200,
+            message: "Author Details Fetched Successfully",
+            data: {
+                author: plainUser,
+                articles,
+                relatedJournalists,
+            },
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        });
+    }
+};
+const getPopularArticles = async (req, res) => {
+    try {
+        const articles = await articlesRepositories_1.default.findPopularArticles();
+        return res.status(200).json({
+            status: 200,
+            message: "Popular Articles Fetched Successfully",
+            data: { articles }
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        });
+    }
+};
+const journalistGetMonthlyTopArticles = async (req, res) => {
+    try {
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+        const month = parseInt(req.query.month) || new Date().getMonth();
+        console.log(month);
+        if (month < 1 || month > 12) {
+            return res.status(400).json({ status: 400, message: "Invalid month value" });
+        }
+        const monthsTopRead = await articlesRepositories_1.default.findTopReadArticlesByMonth(req.user._id, year, month);
+        return res.status(200).json({
+            status: 200,
+            message: "Monthly Top Articles Fetched Successfully",
+            data: { monthsTopRead }
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        });
+    }
 };
 exports.default = {
     getPublishedArticles,
@@ -301,6 +349,8 @@ exports.default = {
     deleteArticle,
     getArticlesByCategory,
     journalistAnalytics,
-    getAuthorProfile
+    getAuthorProfile,
+    getPopularArticles,
+    journalistGetMonthlyTopArticles
 };
 //# sourceMappingURL=articlesControllers.js.map

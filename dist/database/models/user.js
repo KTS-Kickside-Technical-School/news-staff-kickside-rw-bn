@@ -44,7 +44,7 @@ const userSchema = new mongoose_1.Schema({
     },
     username: {
         type: String,
-        required: false
+        required: false,
     },
     email: {
         type: String,

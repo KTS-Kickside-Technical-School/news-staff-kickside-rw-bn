@@ -14,7 +14,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 1
         },
         {
@@ -22,7 +22,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 2
         },
         {
@@ -30,7 +30,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 3
         },
         {
@@ -38,7 +38,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 4
         },
         {
@@ -46,7 +46,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 5
         },
         {
@@ -54,7 +54,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 6
         },
         {
@@ -62,7 +62,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 7
         },
         {
@@ -70,7 +70,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 8
         },
         {
@@ -78,7 +78,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 9
         },
         {
@@ -86,7 +86,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 10
         },
         {
@@ -94,7 +94,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 11
         },
         {
@@ -102,7 +102,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userOneId),
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999717/wipwtaifiqnxgtlfdptt.webp",
-            category: "Tech",
+            category: "Technology",
             slug: 12
         },
         {
@@ -110,7 +110,7 @@ const seedArticles = async () => {
             content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus. Sed sed tellus et arcu facilisis consectetur. Integer vel neque at neque viverra elementum. Sed non neque elit. Sed ut lectus vitae dolor convallis faucibus.",
             coverImage: "https://res.cloudinary.com/dpu6ljn5c/image/upload/v1730999913/ickqupcpil7kpz0np1zc.webp",
             author: new mongoose_1.default.Types.ObjectId(seedsIds_1.userTwoId),
-            category: "Tech",
+            category: "Technology",
             slug: 13
         }
     ];

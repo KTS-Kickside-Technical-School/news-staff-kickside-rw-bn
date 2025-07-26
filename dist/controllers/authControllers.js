@@ -164,6 +164,31 @@ const updateUserProfile = async (req, res) => {
     }
 };
 exports.updateUserProfile = updateUserProfile;
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const isPasswordMatch = await (0, authHelpers_1.comparePassword)(req.body.password, req.user.password);
+        if (!isPasswordMatch) {
+            return res.status(401).json({
+                status: 401,
+                message: "Currnet password is not correct.",
+            });
+        }
+        const newPassword = await (0, authHelpers_1.hashPassword)(req.body.newPassword);
+        const user = await authRepositories_1.default.updateUser(userId, { password: newPassword });
+        return res.status(200).json({
+            status: 200,
+            message: "Password changed successfully",
+            data: { user }
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        });
+    }
+};
 exports.default = {
     userLogin,
     forgotPassword,
@@ -171,5 +196,6 @@ exports.default = {
     userLogout,
     getUserProfile: exports.getUserProfile,
     updateUserProfile: exports.updateUserProfile,
+    changePassword
 };
 //# sourceMappingURL=authControllers.js.map

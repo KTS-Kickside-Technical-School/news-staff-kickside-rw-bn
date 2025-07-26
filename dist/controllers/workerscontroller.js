@@ -9,27 +9,35 @@ const authHelpers_1 = require("../helpers/authHelpers");
 const emailService_1 = require("../service/emailService");
 const createUserController = async (req, res, next) => {
     try {
+        const fullNameWords = `${req.body.firstName} ${req.body.lastName}`.trim().split(/\s+/);
+        req.body.username = fullNameWords.join('-').toLowerCase();
         const generatedPassword = await (0, authHelpers_1.hashPassword)("1234");
         req.body.password = generatedPassword;
         const user = await workersRepositories_1.default.createUser(req.body);
-        await (0, emailService_1.sendEmail)(user.email, "Account created successfully", 'Welcome to Kickside Rwanda', `
-            <b>Welcome to Kickside Rwanda!</b>
-            <p>
-            We are thrilled to have you as part of our team as a <b>${req.body.role}</b>. It is a great pleasure to connect with you and witness your potential contribution to our platform.
+        try {
+            await (0, emailService_1.sendEmail)(user.email, "Account created successfully", 'Welcome to Kickside Rwanda', `
+                <b>Welcome to Kickside Rwanda!</b>
+                <p>
+                We are thrilled to have you as part of our team as a <b>${req.body.role}</b>. It is a great pleasure to connect with you and witness your potential contribution to our platform.
 
-            To get started, please log in to our platform using the following credentials:
+                To get started, please log in to our platform using the following credentials:
 
-            Email: [Your Email]
-            Default Password: 1234
-            For your security, we highly encourage you to change the default password upon logging in.
+                Email: ${user.email}
+                Default Password: 1234
 
-            If you have any questions or require assistance, feel free to reach out.
-            <br/>
-            Best regards,
-            <br/>
-            Kickside Rwanda Team
-            </p>
-            `);
+                For your security, we highly encourage you to change the default password upon logging in.
+
+                If you have any questions or require assistance, feel free to reach out.
+                <br/>
+                Best regards,
+                <br/>
+                Kickside Rwanda Team
+                </p>
+                `);
+        }
+        catch (emailError) {
+            console.warn("Email sending failed, but continuing:", emailError.message || emailError);
+        }
         res.status(201).json({
             status: 201,
             message: 'Worker created successfully.',

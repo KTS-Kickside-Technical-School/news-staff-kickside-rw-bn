@@ -8,7 +8,6 @@ const joi_1 = __importDefault(require("joi"));
 exports.createUserSchema = joi_1.default.object({
     firstName: joi_1.default.string().required(),
     lastName: joi_1.default.string(),
-    username: joi_1.default.string().required(),
     email: joi_1.default.string().required(),
     role: joi_1.default.string().valid('Journalist', 'Editor', 'Admin'),
 });
@@ -20,7 +19,6 @@ exports.updateUserSchema = joi_1.default.object({
     _id: joi_1.default.string().required(),
     firstName: joi_1.default.string(),
     lastName: joi_1.default.string(),
-    username: joi_1.default.string().required(),
     email: joi_1.default.string(),
     password: joi_1.default.string(),
     bio: joi_1.default.string(),

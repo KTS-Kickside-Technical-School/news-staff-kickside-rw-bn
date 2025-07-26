@@ -14,8 +14,8 @@ const articlesRoute = express_1.default.Router();
 articlesRoute.post("/create-article", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.newArticleSchema), articlesMiddleware_1.isArticleAlreadyExists, articlesControllers_1.default.createNewArticle);
 articlesRoute.get("/get-own-articles", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), articlesControllers_1.default.getOwnArticles);
 articlesRoute.get("/get-own-single-article/:id", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.getSingleArticle);
-articlesRoute.post("/request-edit-access/:id", (0, authorization_1.userAuthorization)(["Journalist"]), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleEditRequestAlreadyExists, articlesControllers_1.default.requestArticleEditAccess);
-articlesRoute.put("/journalist-edit-article/:id", (0, authorization_1.userAuthorization)(["Journalist", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.editArticleSchema), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleOwned, articlesMiddleware_1.isArticleEditable, articlesControllers_1.default.editArticle);
+articlesRoute.post("/request-edit-access/:id", (0, authorization_1.userAuthorization)(["Journalist", "Admin", "Editor"]), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleEditRequestAlreadyExists, articlesControllers_1.default.requestArticleEditAccess);
+articlesRoute.put("/journalist-edit-article/:id", (0, authorization_1.userAuthorization)(["Journalist", "Editor", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.editArticleSchema), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleOwned, articlesMiddleware_1.isArticleEditable, articlesControllers_1.default.editArticle);
 articlesRoute.get("/get-all-articles", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesControllers_1.default.getAllArticles);
 articlesRoute.put("/toggle-article-publish/:id", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.toggleArticlePublish);
 articlesRoute.put("/editor-edit-article/:id", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.editArticleSchema), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.editArticle);
@@ -28,5 +28,7 @@ articlesRoute.delete("/delete-article/:id", (0, authorization_1.userAuthorizatio
 articlesRoute.get("/get-articles-by-category/:category", articlesMiddleware_1.isAreticlesExistsByCategory, articlesControllers_1.default.getArticlesByCategory);
 articlesRoute.get("/get-journalists-analytics/:year", (0, authorization_1.userAuthorization)(["Journalist", "Admin", "Editor"]), articlesControllers_1.default.journalistAnalytics);
 articlesRoute.get("/get-author-profile/:username", authMiddleware_1.isUserExistByUsername, articlesControllers_1.default.getAuthorProfile);
+articlesRoute.get("/get-popular-articles", articlesControllers_1.default.getPopularArticles);
+articlesRoute.get("/journalist-get-monthly-top", (0, authorization_1.userAuthorization)(["Journalist", "Admin", "Editor"]), articlesControllers_1.default.journalistGetMonthlyTopArticles);
 exports.default = articlesRoute;
 //# sourceMappingURL=articlesRoutes.js.map
