@@ -1,0 +1,32 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const articlesControllers_1 = __importDefault(require("../controllers/articlesControllers"));
+const articlesMiddleware_1 = require("../middlewares/articlesMiddleware");
+const bodyValidation_1 = __importDefault(require("../middlewares/bodyValidation"));
+const articlesValidations_1 = require("../validations/articlesValidations");
+const authorization_1 = require("../middlewares/authorization");
+const authMiddleware_1 = require("../middlewares/authMiddleware");
+const articlesRoute = express_1.default.Router();
+articlesRoute.post("/create-article", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.newArticleSchema), articlesMiddleware_1.isArticleAlreadyExists, articlesControllers_1.default.createNewArticle);
+articlesRoute.get("/get-own-articles", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), articlesControllers_1.default.getOwnArticles);
+articlesRoute.get("/get-own-single-article/:id", (0, authorization_1.userAuthorization)(["Editor", "Journalist", "Admin"]), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.getSingleArticle);
+articlesRoute.post("/request-edit-access/:id", (0, authorization_1.userAuthorization)(["Journalist"]), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleEditRequestAlreadyExists, articlesControllers_1.default.requestArticleEditAccess);
+articlesRoute.put("/journalist-edit-article/:id", (0, authorization_1.userAuthorization)(["Journalist", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.editArticleSchema), articlesMiddleware_1.isArticleExists, articlesMiddleware_1.isArticleOwned, articlesMiddleware_1.isArticleEditable, articlesControllers_1.default.editArticle);
+articlesRoute.get("/get-all-articles", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesControllers_1.default.getAllArticles);
+articlesRoute.put("/toggle-article-publish/:id", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.toggleArticlePublish);
+articlesRoute.put("/editor-edit-article/:id", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), (0, bodyValidation_1.default)(articlesValidations_1.editArticleSchema), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.editArticle);
+articlesRoute.get("/get-all-articles-edit-requests", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesControllers_1.default.getAllArticlesEditRequests);
+articlesRoute.put("/confirm-edit-request/:id", (0, authorization_1.userAuthorization)(["Editor", "Admin"]), articlesMiddleware_1.isArticleEditRequestExistsAndPending, articlesControllers_1.default.approveArticlesEditRequests);
+articlesRoute.get("/get-published-articles", articlesControllers_1.default.getPublishedArticles);
+articlesRoute.get("/get-single-article/:slug", articlesMiddleware_1.isArticleExistsBySlug, articlesControllers_1.default.getSingleArticle);
+articlesRoute.post("/post-comments", (0, bodyValidation_1.default)(articlesValidations_1.postArticleComment), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.postArticleComment);
+articlesRoute.delete("/delete-article/:id", (0, authorization_1.userAuthorization)(["Admin"]), articlesMiddleware_1.isArticleExists, articlesControllers_1.default.deleteArticle);
+articlesRoute.get("/get-articles-by-category/:category", articlesMiddleware_1.isAreticlesExistsByCategory, articlesControllers_1.default.getArticlesByCategory);
+articlesRoute.get("/get-journalists-analytics/:year", (0, authorization_1.userAuthorization)(["Journalist", "Admin", "Editor"]), articlesControllers_1.default.journalistAnalytics);
+articlesRoute.get("/get-author-profile/:username", authMiddleware_1.isUserExistByUsername, articlesControllers_1.default.getAuthorProfile);
+exports.default = articlesRoute;
+//# sourceMappingURL=articlesRoutes.js.map
