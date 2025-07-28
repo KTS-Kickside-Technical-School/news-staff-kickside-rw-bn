@@ -5,6 +5,8 @@ import ArticlesEditRequest from "../database/models/articlesEditRequest";
 import ArticleView from "../database/models/articlesViews";
 import moment from "moment";
 
+const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 const findPublishedArticles = async () => {
     return Article.find({ status: 'published' })
         .populate('author')
@@ -401,6 +403,178 @@ const findTopReadArticlesByMonth = async (user, year, month, limit = 10) => {
 };
 
 
+
+export const adminGetJournalistAnalytics = async (userId) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    const [totalArticles, articlesThisMonth, articlesThisYear, pendingArticles, categories, views, articleStats, commentStats, commentsPerArticle] = await Promise.all([
+        Article.countDocuments({ author: userId, isDeleted: false }),
+
+        Article.countDocuments({
+            author: userId,
+            isDeleted: false,
+            createdAt: { $gte: startOfMonth },
+        }),
+
+        Article.countDocuments({
+            author: userId,
+            isDeleted: false,
+            createdAt: { $gte: startOfYear },
+        }),
+
+        Article.countDocuments({
+            author: userId,
+            isDeleted: false,
+            status: 'unpublished',
+        }),
+
+        Article.aggregate([
+            { $match: { author: new mongoose.Types.ObjectId(userId), isDeleted: false } },
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 3 },
+        ]),
+
+        ArticleView.aggregate([
+            { $lookup: { from: 'articles', localField: 'article', foreignField: '_id', as: 'article' } },
+            { $unwind: '$article' },
+            { $match: { 'article.author': new mongoose.Types.ObjectId(userId) } },
+            {
+                $group: {
+                    _id: { month: { $month: '$createdAt' } },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { '_id.month': 1 } },
+        ]),
+
+        Article.aggregate([
+            { $match: { author: new mongoose.Types.ObjectId(userId), isDeleted: false } },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: '$createdAt' },
+                        status: '$status'
+                    },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { '_id.month': 1 } },
+        ]),
+
+        ArticleComment.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startOfYear },
+                }
+            },
+            {
+                $lookup: {
+                    from: "articles",
+                    localField: "article",
+                    foreignField: "_id",
+                    as: "articleData"
+                }
+            },
+            { $unwind: "$articleData" },
+            {
+                $match: {
+                    "articleData.author": new mongoose.Types.ObjectId(userId)
+                }
+            },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.month": 1 } }
+        ]),
+
+        ArticleComment.aggregate([
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: 'article',
+                    foreignField: '_id',
+                    as: 'articleData',
+                },
+            },
+            { $unwind: '$articleData' },
+            {
+                $match: {
+                    'articleData.author': new mongoose.Types.ObjectId(userId),
+                },
+            },
+            {
+                $group: {
+                    _id: '$article',
+                    count: { $sum: 1 },
+                },
+            },
+        ])
+    ]);
+
+    const readershipStats = Array(12).fill(0);
+    views.forEach(v => {
+        readershipStats[v._id.month - 1] = v.count;
+    });
+
+    const published = Array(12).fill(0);
+    const drafts = Array(12).fill(0);
+    articleStats.forEach(stat => {
+        const month = stat._id.month - 1;
+        if (stat._id.status === 'published') published[month] = stat.count;
+        else drafts[month] += stat.count;
+    });
+
+    const commentStatsData = {
+        labels: monthLabels,
+        data: Array(12).fill(0),
+    };
+
+    commentStats.forEach(({ _id, count }) => {
+        const idx = _id.month - 1;
+        if (idx >= 0 && idx < 12) {
+            commentStatsData.data[idx] = count;
+        }
+    });
+
+    const totalComments = commentsPerArticle.reduce((sum, item) => sum + item.count, 0);
+    const commentsPerArticleAvg = totalArticles > 0 ? (totalComments / totalArticles) : '0.0';
+
+    const articles = await findArticlesByAttribute("author", userId);
+
+    return {
+        totalArticles,
+        articlesThisMonth,
+        articlesThisYear,
+        avgReadTime: '3.2 min', // mock
+        approvalRate: '92%', // mock
+        pendingArticles,
+        topCategories: categories.map(c => c._id),
+        readershipStats: {
+            labels: monthLabels,
+            data: readershipStats,
+        },
+        commentStats: commentStatsData,
+        commentsPerArticle: commentsPerArticleAvg,
+        articleTrends: {
+            labels: monthLabels,
+            published,
+            drafts,
+        },
+        categoryDistribution: {
+            labels: categories.map(c => c._id),
+            data: categories.map(c => c.count),
+        },
+        articles
+    };
+};
+
+
 export default {
     findAllArticles,
     findPublishedArticles,
@@ -423,5 +597,6 @@ export default {
     findArticlesTotalViews,
     findPopularArticles,
     findArticleRelatedArticles,
-    findTopReadArticlesByMonth
+    findTopReadArticlesByMonth,
+    adminGetJournalistAnalytics
 }

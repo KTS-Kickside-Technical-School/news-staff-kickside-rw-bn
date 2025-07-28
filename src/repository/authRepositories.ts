@@ -53,7 +53,6 @@ export default {
     updateUser,
     deleteSession,
     getUserById,
-
     findUserByUsernames,
     findArticlesByAuthor,
     findRelatedJournalists

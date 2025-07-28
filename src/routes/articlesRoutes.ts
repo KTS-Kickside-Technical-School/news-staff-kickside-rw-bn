@@ -42,5 +42,6 @@ articlesRoute.get("/get-author-profile/:username", isUserExistByUsername, articl
 articlesRoute.get("/get-popular-articles", articlesControllers.getPopularArticles);
 
 articlesRoute.get("/journalist-get-monthly-top", userAuthorization(["Journalist", "Admin", "Editor"]), articlesControllers.journalistGetMonthlyTopArticles)
+articlesRoute.get('/journalist/:userId/analytics', articlesControllers.adminFetchJournalistAnalytics);
 
 export default articlesRoute;

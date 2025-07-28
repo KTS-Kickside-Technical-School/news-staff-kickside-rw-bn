@@ -30,5 +30,6 @@ articlesRoute.get("/get-journalists-analytics/:year", (0, authorization_1.userAu
 articlesRoute.get("/get-author-profile/:username", authMiddleware_1.isUserExistByUsername, articlesControllers_1.default.getAuthorProfile);
 articlesRoute.get("/get-popular-articles", articlesControllers_1.default.getPopularArticles);
 articlesRoute.get("/journalist-get-monthly-top", (0, authorization_1.userAuthorization)(["Journalist", "Admin", "Editor"]), articlesControllers_1.default.journalistGetMonthlyTopArticles);
+articlesRoute.get('/journalist/:userId/analytics', articlesControllers_1.default.adminFetchJournalistAnalytics);
 exports.default = articlesRoute;
 //# sourceMappingURL=articlesRoutes.js.map

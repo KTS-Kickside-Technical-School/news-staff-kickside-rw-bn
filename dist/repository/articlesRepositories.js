@@ -3,12 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.adminGetJournalistAnalytics = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const article_1 = __importDefault(require("../database/models/article"));
 const articleComment_1 = __importDefault(require("../database/models/articleComment"));
 const articlesEditRequest_1 = __importDefault(require("../database/models/articlesEditRequest"));
 const articlesViews_1 = __importDefault(require("../database/models/articlesViews"));
 const moment_1 = __importDefault(require("moment"));
+const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const findPublishedArticles = async () => {
     return article_1.default.find({ status: 'published' })
         .populate('author')
@@ -356,6 +358,162 @@ const findTopReadArticlesByMonth = async (user, year, month, limit = 10) => {
         author: v.author
     }));
 };
+const adminGetJournalistAnalytics = async (userId) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const [totalArticles, articlesThisMonth, articlesThisYear, pendingArticles, categories, views, articleStats, commentStats, commentsPerArticle] = await Promise.all([
+        article_1.default.countDocuments({ author: userId, isDeleted: false }),
+        article_1.default.countDocuments({
+            author: userId,
+            isDeleted: false,
+            createdAt: { $gte: startOfMonth },
+        }),
+        article_1.default.countDocuments({
+            author: userId,
+            isDeleted: false,
+            createdAt: { $gte: startOfYear },
+        }),
+        article_1.default.countDocuments({
+            author: userId,
+            isDeleted: false,
+            status: 'unpublished',
+        }),
+        article_1.default.aggregate([
+            { $match: { author: new mongoose_1.default.Types.ObjectId(userId), isDeleted: false } },
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 3 },
+        ]),
+        articlesViews_1.default.aggregate([
+            { $lookup: { from: 'articles', localField: 'article', foreignField: '_id', as: 'article' } },
+            { $unwind: '$article' },
+            { $match: { 'article.author': new mongoose_1.default.Types.ObjectId(userId) } },
+            {
+                $group: {
+                    _id: { month: { $month: '$createdAt' } },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { '_id.month': 1 } },
+        ]),
+        article_1.default.aggregate([
+            { $match: { author: new mongoose_1.default.Types.ObjectId(userId), isDeleted: false } },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: '$createdAt' },
+                        status: '$status'
+                    },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { '_id.month': 1 } },
+        ]),
+        articleComment_1.default.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startOfYear },
+                }
+            },
+            {
+                $lookup: {
+                    from: "articles",
+                    localField: "article",
+                    foreignField: "_id",
+                    as: "articleData"
+                }
+            },
+            { $unwind: "$articleData" },
+            {
+                $match: {
+                    "articleData.author": new mongoose_1.default.Types.ObjectId(userId)
+                }
+            },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id.month": 1 } }
+        ]),
+        articleComment_1.default.aggregate([
+            {
+                $lookup: {
+                    from: 'articles',
+                    localField: 'article',
+                    foreignField: '_id',
+                    as: 'articleData',
+                },
+            },
+            { $unwind: '$articleData' },
+            {
+                $match: {
+                    'articleData.author': new mongoose_1.default.Types.ObjectId(userId),
+                },
+            },
+            {
+                $group: {
+                    _id: '$article',
+                    count: { $sum: 1 },
+                },
+            },
+        ])
+    ]);
+    const readershipStats = Array(12).fill(0);
+    views.forEach(v => {
+        readershipStats[v._id.month - 1] = v.count;
+    });
+    const published = Array(12).fill(0);
+    const drafts = Array(12).fill(0);
+    articleStats.forEach(stat => {
+        const month = stat._id.month - 1;
+        if (stat._id.status === 'published')
+            published[month] = stat.count;
+        else
+            drafts[month] += stat.count;
+    });
+    const commentStatsData = {
+        labels: monthLabels,
+        data: Array(12).fill(0),
+    };
+    commentStats.forEach(({ _id, count }) => {
+        const idx = _id.month - 1;
+        if (idx >= 0 && idx < 12) {
+            commentStatsData.data[idx] = count;
+        }
+    });
+    const totalComments = commentsPerArticle.reduce((sum, item) => sum + item.count, 0);
+    const commentsPerArticleAvg = totalArticles > 0 ? (totalComments / totalArticles) : '0.0';
+    const articles = await findArticlesByAttribute("author", userId);
+    return {
+        totalArticles,
+        articlesThisMonth,
+        articlesThisYear,
+        avgReadTime: '3.2 min', // mock
+        approvalRate: '92%', // mock
+        pendingArticles,
+        topCategories: categories.map(c => c._id),
+        readershipStats: {
+            labels: monthLabels,
+            data: readershipStats,
+        },
+        commentStats: commentStatsData,
+        commentsPerArticle: commentsPerArticleAvg,
+        articleTrends: {
+            labels: monthLabels,
+            published,
+            drafts,
+        },
+        categoryDistribution: {
+            labels: categories.map(c => c._id),
+            data: categories.map(c => c.count),
+        },
+        articles
+    };
+};
+exports.adminGetJournalistAnalytics = adminGetJournalistAnalytics;
 exports.default = {
     findAllArticles,
     findPublishedArticles,
@@ -378,6 +536,7 @@ exports.default = {
     findArticlesTotalViews,
     findPopularArticles,
     findArticleRelatedArticles,
-    findTopReadArticlesByMonth
+    findTopReadArticlesByMonth,
+    adminGetJournalistAnalytics: exports.adminGetJournalistAnalytics
 };
 //# sourceMappingURL=articlesRepositories.js.map

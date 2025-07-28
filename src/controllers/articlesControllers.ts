@@ -352,6 +352,23 @@ const journalistGetMonthlyTopArticles = async (req: any, res: Response): Promise
     }
 };
 
+
+export const adminFetchJournalistAnalytics = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log(userId)
+        const analytics = await articlesRepositories.adminGetJournalistAnalytics(userId);
+        res.status(200).json({
+            status: 200,
+            message: "Data analytics retrieved successsfully",
+            data: analytics
+        });
+    } catch (error) {
+        console.error('Analytics fetch failed:', error);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+};
+
 export default {
     getPublishedArticles,
     getAllArticles,
@@ -369,5 +386,6 @@ export default {
     journalistAnalytics,
     getAuthorProfile,
     getPopularArticles,
-    journalistGetMonthlyTopArticles
+    journalistGetMonthlyTopArticles,
+    adminFetchJournalistAnalytics
 }
