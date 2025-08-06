@@ -596,18 +596,15 @@ const findTopFeaturedArticles = async () => {
     // Get start of month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Helper to remove duplicates
-    const deduplicateArticles = (articles) => {
+    const deduplicateArticles = (articles: any[]) => {
         const unique = new Map();
         for (const article of articles) {
-            if (!unique.has(article._id.toString())) {
-                unique.set(article._id.toString(), article);
-            }
+            const id = article._id.toString();
+            if (!unique.has(id)) unique.set(id, article);
         }
         return Array.from(unique.values());
     };
 
-    // Populate author info
     const populateAuthors = async (articles: Array<any>) => {
         return await Article.populate(articles, {
             path: "author",
@@ -615,13 +612,12 @@ const findTopFeaturedArticles = async () => {
         }) as typeof articles;
     };
 
-    // 1. Get 2 LATEST articles (most recent)
+    // Base queries
     const latestArticles = await Article.find()
         .sort({ createdAt: -1 })
-        .limit(2)
+        .limit(6) // Fetch more for fallback
         .lean();
 
-    // 2. Get 3 MOST READ THIS WEEK
     const weeklyTopArticles = await ArticleView.aggregate([
         { $match: { createdAt: { $gte: startOfWeek } } },
         { $group: { _id: "$article", count: { $sum: 1 } } },
@@ -639,7 +635,6 @@ const findTopFeaturedArticles = async () => {
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    // 3. Get 1 MOST READ THIS MONTH
     const monthlyTopArticle = await ArticleView.aggregate([
         { $match: { createdAt: { $gte: startOfMonth } } },
         { $group: { _id: "$article", count: { $sum: 1 } } },
@@ -657,31 +652,40 @@ const findTopFeaturedArticles = async () => {
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    // Combine all articles and remove duplicates
-    const allArticles = deduplicateArticles([
-        ...latestArticles,
+    // Combine and deduplicate
+    let combined = deduplicateArticles([
+        ...latestArticles.slice(0, 2),
         ...weeklyTopArticles,
         ...monthlyTopArticle,
     ]);
 
-    // Populate author info and return exactly 6 articles
+    // Backfill with more latest articles if needed
+    if (combined.length < 6) {
+        for (const article of latestArticles) {
+            if (combined.length >= 6) break;
+            const id = article._id.toString();
+            if (!combined.find(a => a._id.toString() === id)) {
+                combined.push(article);
+            }
+        }
+    }
+
     const populatedArticles = await populateAuthors(
-        allArticles.map(article => article.toObject?.() ?? article)
+        combined.map(article => article.toObject?.() ?? article)
     );
 
-    return populatedArticles.slice(0, 6);
+    return populatedArticles.slice(0, 6); // Final cut
 };
+
 
 const findArticlesByCategoryWithWeeklyTop = async () => {
     const now = new Date();
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+    startOfWeek.setDate(now.getDate() - now.getDay());
 
-    // 1. First get all categories with their weekly top 2 articles
     const categoriesWithWeeklyTop: CategoryArticles = {};
 
     for (const category of categories) {
-        // Get weekly top 2 for this category
         const weeklyTop = await ArticleView.aggregate([
             {
                 $match: {
@@ -710,7 +714,6 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
             { $replaceRoot: { newRoot: "$article" } },
         ]);
 
-        // Get 3 other recent articles from this category (excluding the weekly top)
         const otherArticles = await Article.find({
             category,
             _id: { $nin: weeklyTop.map(a => a._id) }
@@ -725,7 +728,6 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
         };
     }
 
-    // 2. Populate author information for all articles
     for (const category in categoriesWithWeeklyTop) {
         const { weeklyTop, otherArticles } = categoriesWithWeeklyTop[category];
 
