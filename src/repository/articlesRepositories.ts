@@ -9,6 +9,15 @@ const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const categories = ["Entertainment", "Sports", "Technology", "Business"];
 
 
+interface CategoryArticles {
+  [category: string]: {
+    weeklyTop: any[];
+    otherArticles: any[];
+  };
+}
+
+
+
 const findPublishedArticles = async () => {
     return Article.find({ status: 'published' })
         .populate('author')
@@ -329,7 +338,7 @@ const findArticleRelatedArticles = async (article: any, category: any) => {
     })
         .populate('author')
         .sort({ createdAt: -1 })
-        .limit(3);
+        .limit(6);
 };
 
 
@@ -579,11 +588,15 @@ export const adminGetJournalistAnalytics = async (userId) => {
 
 const findTopFeaturedArticles = async () => {
     const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - startOfWeek.getDay());
 
+    // Get start of week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    // Get start of month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    // Helper to remove duplicates
     const deduplicateArticles = (articles) => {
         const unique = new Map();
         for (const article of articles) {
@@ -594,20 +607,26 @@ const findTopFeaturedArticles = async () => {
         return Array.from(unique.values());
     };
 
-    const populateAuthors = async (
-        articles: Array<any> 
-    ) => {
+    // Populate author info
+    const populateAuthors = async (articles: Array<any>) => {
         return await Article.populate(articles, {
             path: "author",
             select: "firstName lastName username profile",
         }) as typeof articles;
     };
 
-    const weeklyViews = await ArticleView.aggregate([
+    // 1. Get 2 LATEST articles (most recent)
+    const latestArticles = await Article.find()
+        .sort({ createdAt: -1 })
+        .limit(2)
+        .lean();
+
+    // 2. Get 3 MOST READ THIS WEEK
+    const weeklyTopArticles = await ArticleView.aggregate([
         { $match: { createdAt: { $gte: startOfWeek } } },
         { $group: { _id: "$article", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 2 },
+        { $limit: 3 },
         {
             $lookup: {
                 from: "articles",
@@ -620,11 +639,12 @@ const findTopFeaturedArticles = async () => {
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    const monthlyViews = await ArticleView.aggregate([
+    // 3. Get 1 MOST READ THIS MONTH
+    const monthlyTopArticle = await ArticleView.aggregate([
         { $match: { createdAt: { $gte: startOfMonth } } },
         { $group: { _id: "$article", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 2 },
+        { $limit: 1 },
         {
             $lookup: {
                 from: "articles",
@@ -637,10 +657,37 @@ const findTopFeaturedArticles = async () => {
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    const categoryArticles = [];
+    // Combine all articles and remove duplicates
+    const allArticles = deduplicateArticles([
+        ...latestArticles,
+        ...weeklyTopArticles,
+        ...monthlyTopArticle,
+    ]);
+
+    // Populate author info and return exactly 6 articles
+    const populatedArticles = await populateAuthors(
+        allArticles.map(article => article.toObject?.() ?? article)
+    );
+
+    return populatedArticles.slice(0, 6);
+};
+
+const findArticlesByCategoryWithWeeklyTop = async () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+
+    // 1. First get all categories with their weekly top 2 articles
+    const categoriesWithWeeklyTop: CategoryArticles = {};
+
     for (const category of categories) {
-        const categoryTop = await ArticleView.aggregate([
-            { $match: { createdAt: { $gte: startOfWeek } } },
+        // Get weekly top 2 for this category
+        const weeklyTop = await ArticleView.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startOfWeek }
+                }
+            },
             {
                 $lookup: {
                     from: "articles",
@@ -655,62 +702,45 @@ const findTopFeaturedArticles = async () => {
                 $group: {
                     _id: "$article._id",
                     article: { $first: "$article" },
-                    count: { $sum: 1 },
+                    viewCount: { $sum: 1 },
                 },
             },
-            { $sort: { count: -1 } },
-            { $limit: 1 },
+            { $sort: { viewCount: -1 } },
+            { $limit: 2 },
             { $replaceRoot: { newRoot: "$article" } },
         ]);
 
-        if (categoryTop.length > 0) {
-            categoryArticles.push(categoryTop[0]);
-        }
-    }
-
-    const weeklyComments = await ArticleComment.aggregate([
-        { $match: { createdAt: { $gte: startOfWeek } } },
-        { $group: { _id: "$article", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 2 },
-        {
-            $lookup: {
-                from: "articles",
-                localField: "_id",
-                foreignField: "_id",
-                as: "article",
-            },
-        },
-        { $unwind: "$article" },
-        { $replaceRoot: { newRoot: "$article" } },
-    ]);
-
-    const allCollected = deduplicateArticles([
-        ...weeklyViews,
-        ...monthlyViews,
-        ...categoryArticles,
-        ...weeklyComments,
-    ]);
-
-    const remainingLimit = 10 - allCollected.length;
-    let fillerArticles = [];
-
-    if (remainingLimit > 0) {
-        fillerArticles = await Article.find({
-            _id: { $nin: allCollected.map((a) => a._id) },
+        // Get 3 other recent articles from this category (excluding the weekly top)
+        const otherArticles = await Article.find({
+            category,
+            _id: { $nin: weeklyTop.map(a => a._id) }
         })
-            .sort({ views: -1 })
-            .limit(remainingLimit)
+            .sort({ createdAt: -1 })
+            .limit(3)
             .lean();
+
+        categoriesWithWeeklyTop[category] = {
+            weeklyTop,
+            otherArticles
+        };
     }
 
-    const finalArticles = deduplicateArticles([...allCollected, ...fillerArticles]);
+    // 2. Populate author information for all articles
+    for (const category in categoriesWithWeeklyTop) {
+        const { weeklyTop, otherArticles } = categoriesWithWeeklyTop[category];
 
-    const populatedArticles = await populateAuthors(
-        finalArticles.map((article) => article.toObject?.() ?? article)
-    );
+        categoriesWithWeeklyTop[category].weeklyTop = await Article.populate(
+            weeklyTop,
+            { path: "author", select: "firstName lastName username profile" }
+        );
 
-    return populatedArticles.slice(0, 10);
+        categoriesWithWeeklyTop[category].otherArticles = await Article.populate(
+            otherArticles,
+            { path: "author", select: "firstName lastName username profile" }
+        );
+    }
+
+    return categoriesWithWeeklyTop;
 };
 
 export default {
@@ -737,5 +767,6 @@ export default {
     findArticleRelatedArticles,
     findTopReadArticlesByMonth,
     adminGetJournalistAnalytics,
-    findTopFeaturedArticles
+    findTopFeaturedArticles,
+    findArticlesByCategoryWithWeeklyTop
 }

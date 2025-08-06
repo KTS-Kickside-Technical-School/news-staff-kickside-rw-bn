@@ -369,7 +369,7 @@ export const adminFetchJournalistAnalytics = async (req, res) => {
     }
 };
 
-export const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any> => {
+const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any> => {
     try {
         const articles = await articlesRepositories.findTopFeaturedArticles();
         return res.status(200).json({
@@ -384,6 +384,25 @@ export const getTopFeaturedArticles = async (req: Request, res: Response): Promi
         })
     }
 }
+
+const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const articles = await articlesRepositories.findArticlesByCategoryWithWeeklyTop();
+        return res.status(200).json({
+            status: 200,
+            message: "Top weekly articles by categories fetched successfully",
+            data: articles
+        })
+
+    }
+    catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        })
+    }
+}
+
 export default {
     getPublishedArticles,
     getAllArticles,
@@ -403,5 +422,6 @@ export default {
     getPopularArticles,
     journalistGetMonthlyTopArticles,
     adminFetchJournalistAnalytics,
-    getTopFeaturedArticles
+    getTopFeaturedArticles,
+    getTOpWeeklyArticlesByCategories
 }

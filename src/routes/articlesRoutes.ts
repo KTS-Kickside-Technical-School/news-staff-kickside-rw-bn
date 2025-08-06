@@ -45,5 +45,6 @@ articlesRoute.get("/journalist-get-monthly-top", userAuthorization(["Journalist"
 articlesRoute.get('/journalist/:userId/analytics', articlesControllers.adminFetchJournalistAnalytics);
 
 articlesRoute.get("/get-top-featured-articles", articlesControllers.getTopFeaturedArticles);
+articlesRoute.get("/get-top-weekly-categories", articlesControllers.getTOpWeeklyArticlesByCategories);
 
 export default articlesRoute;
