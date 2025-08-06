@@ -6,6 +6,8 @@ import ArticleView from "../database/models/articlesViews";
 import moment from "moment";
 
 const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const categories = ["Entertainment", "Sports", "Technology", "Business"];
+
 
 const findPublishedArticles = async () => {
     return Article.find({ status: 'published' })
@@ -575,6 +577,142 @@ export const adminGetJournalistAnalytics = async (userId) => {
 };
 
 
+const findTopFeaturedArticles = async () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - startOfWeek.getDay());
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const deduplicateArticles = (articles) => {
+        const unique = new Map();
+        for (const article of articles) {
+            if (!unique.has(article._id.toString())) {
+                unique.set(article._id.toString(), article);
+            }
+        }
+        return Array.from(unique.values());
+    };
+
+    const populateAuthors = async (
+        articles: Array<any> 
+    ) => {
+        return await Article.populate(articles, {
+            path: "author",
+            select: "firstName lastName username profile",
+        }) as typeof articles;
+    };
+
+    const weeklyViews = await ArticleView.aggregate([
+        { $match: { createdAt: { $gte: startOfWeek } } },
+        { $group: { _id: "$article", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 2 },
+        {
+            $lookup: {
+                from: "articles",
+                localField: "_id",
+                foreignField: "_id",
+                as: "article",
+            },
+        },
+        { $unwind: "$article" },
+        { $replaceRoot: { newRoot: "$article" } },
+    ]);
+
+    const monthlyViews = await ArticleView.aggregate([
+        { $match: { createdAt: { $gte: startOfMonth } } },
+        { $group: { _id: "$article", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 2 },
+        {
+            $lookup: {
+                from: "articles",
+                localField: "_id",
+                foreignField: "_id",
+                as: "article",
+            },
+        },
+        { $unwind: "$article" },
+        { $replaceRoot: { newRoot: "$article" } },
+    ]);
+
+    const categoryArticles = [];
+    for (const category of categories) {
+        const categoryTop = await ArticleView.aggregate([
+            { $match: { createdAt: { $gte: startOfWeek } } },
+            {
+                $lookup: {
+                    from: "articles",
+                    localField: "article",
+                    foreignField: "_id",
+                    as: "article",
+                },
+            },
+            { $unwind: "$article" },
+            { $match: { "article.category": category } },
+            {
+                $group: {
+                    _id: "$article._id",
+                    article: { $first: "$article" },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 1 },
+            { $replaceRoot: { newRoot: "$article" } },
+        ]);
+
+        if (categoryTop.length > 0) {
+            categoryArticles.push(categoryTop[0]);
+        }
+    }
+
+    const weeklyComments = await ArticleComment.aggregate([
+        { $match: { createdAt: { $gte: startOfWeek } } },
+        { $group: { _id: "$article", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 2 },
+        {
+            $lookup: {
+                from: "articles",
+                localField: "_id",
+                foreignField: "_id",
+                as: "article",
+            },
+        },
+        { $unwind: "$article" },
+        { $replaceRoot: { newRoot: "$article" } },
+    ]);
+
+    const allCollected = deduplicateArticles([
+        ...weeklyViews,
+        ...monthlyViews,
+        ...categoryArticles,
+        ...weeklyComments,
+    ]);
+
+    const remainingLimit = 10 - allCollected.length;
+    let fillerArticles = [];
+
+    if (remainingLimit > 0) {
+        fillerArticles = await Article.find({
+            _id: { $nin: allCollected.map((a) => a._id) },
+        })
+            .sort({ views: -1 })
+            .limit(remainingLimit)
+            .lean();
+    }
+
+    const finalArticles = deduplicateArticles([...allCollected, ...fillerArticles]);
+
+    const populatedArticles = await populateAuthors(
+        finalArticles.map((article) => article.toObject?.() ?? article)
+    );
+
+    return populatedArticles.slice(0, 10);
+};
+
 export default {
     findAllArticles,
     findPublishedArticles,
@@ -598,5 +736,6 @@ export default {
     findPopularArticles,
     findArticleRelatedArticles,
     findTopReadArticlesByMonth,
-    adminGetJournalistAnalytics
+    adminGetJournalistAnalytics,
+    findTopFeaturedArticles
 }

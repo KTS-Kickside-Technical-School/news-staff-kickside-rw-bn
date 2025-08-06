@@ -44,4 +44,6 @@ articlesRoute.get("/get-popular-articles", articlesControllers.getPopularArticle
 articlesRoute.get("/journalist-get-monthly-top", userAuthorization(["Journalist", "Admin", "Editor"]), articlesControllers.journalistGetMonthlyTopArticles)
 articlesRoute.get('/journalist/:userId/analytics', articlesControllers.adminFetchJournalistAnalytics);
 
+articlesRoute.get("/get-top-featured-articles", articlesControllers.getTopFeaturedArticles);
+
 export default articlesRoute;
