@@ -10,10 +10,10 @@ const categories = ["Entertainment", "Sports", "Technology", "Business"];
 
 
 interface CategoryArticles {
-  [category: string]: {
-    weeklyTop: any[];
-    otherArticles: any[];
-  };
+    [category: string]: {
+        weeklyTop: any[];
+        otherArticles: any[];
+    };
 }
 
 
@@ -589,11 +589,9 @@ export const adminGetJournalistAnalytics = async (userId) => {
 const findTopFeaturedArticles = async () => {
     const now = new Date();
 
-    // Get start of week (Sunday)
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
 
-    // Get start of month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const deduplicateArticles = (articles: any[]) => {
@@ -612,10 +610,9 @@ const findTopFeaturedArticles = async () => {
         }) as typeof articles;
     };
 
-    // Base queries
-    const latestArticles = await Article.find()
+    const latestArticles = await Article.find({ status: "published" })
         .sort({ createdAt: -1 })
-        .limit(6) // Fetch more for fallback
+        .limit(6)
         .lean();
 
     const weeklyTopArticles = await ArticleView.aggregate([
@@ -652,14 +649,12 @@ const findTopFeaturedArticles = async () => {
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    // Combine and deduplicate
     let combined = deduplicateArticles([
         ...latestArticles.slice(0, 2),
         ...weeklyTopArticles,
         ...monthlyTopArticle,
     ]);
 
-    // Backfill with more latest articles if needed
     if (combined.length < 6) {
         for (const article of latestArticles) {
             if (combined.length >= 6) break;
@@ -674,7 +669,7 @@ const findTopFeaturedArticles = async () => {
         combined.map(article => article.toObject?.() ?? article)
     );
 
-    return populatedArticles.slice(0, 6); // Final cut
+    return populatedArticles.slice(0, 6);
 };
 
 
