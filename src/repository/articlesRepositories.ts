@@ -740,6 +740,83 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
     return categoriesWithWeeklyTop;
 };
 
+
+const searchArticles = async ({
+    query = '',
+    page = 1,
+    limit = 35,
+}: {
+    query?: string;
+    page?: number;
+    limit?: number;
+}) => {
+    const minResults = 15;
+
+    const q = query.trim();
+    const words = q.split(/\s+/).filter(Boolean);
+
+    const escapeRegex = (text: string) =>
+        text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const buildRegex = (text: string) => new RegExp(escapeRegex(text), 'i');
+
+    const buildConditions = (text: string) => [
+        { title: buildRegex(text) },
+        { content: buildRegex(text) },
+        { category: buildRegex(text) },
+    ];
+
+    let results = await Article.find({
+        status: 'published',
+        $or: buildConditions(q),
+    })
+        .populate('author')
+        .lean();
+
+    if (results.length === 0 && words.length > 0) {
+        const wordConditions = words.flatMap((w) => buildConditions(w));
+        results = await Article.find({
+            status: 'Published',
+            $or: wordConditions,
+        })
+            .populate('author')
+            .lean();
+    }
+
+    if (results.length < minResults) {
+        const fillers = await Article.find({
+            status: 'Published',
+            _id: { $nin: results.map((r) => r._id) },
+        })
+            .limit(minResults - results.length)
+            .populate('author')
+            .lean();
+
+        results = [...results, ...fillers];
+    }
+
+    const totalResults = results.length;
+    const totalPages = Math.ceil(totalResults / limit);
+    const startIndex = (page - 1) * limit;
+    const paginated = results.slice(startIndex, startIndex + limit);
+
+    return {
+        total: totalResults,
+        page,
+        limit,
+        totalPages,
+        articles: paginated,
+    };
+};
+
+const findUsersLatestArticlesCustomized = async (limit: number) => {
+    return Article.find({ status: 'published' })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+};
+
+
+
 export default {
     findAllArticles,
     findPublishedArticles,
@@ -765,5 +842,7 @@ export default {
     findTopReadArticlesByMonth,
     adminGetJournalistAnalytics,
     findTopFeaturedArticles,
-    findArticlesByCategoryWithWeeklyTop
+    findArticlesByCategoryWithWeeklyTop,
+    searchArticles,
+    findUsersLatestArticlesCustomized
 }

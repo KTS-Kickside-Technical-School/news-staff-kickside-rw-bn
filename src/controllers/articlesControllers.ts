@@ -403,6 +403,42 @@ const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Pr
     }
 }
 
+const userSearchArticles = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { query = '', page = 1, limit = 35 } = req.query;
+
+        const data = await articlesRepositories.searchArticles({
+            query: String(query),
+            page: Number(page),
+            limit: Number(limit),
+        });
+
+        return res.status(200).json({ status: 200, ...data });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        })
+    }
+}
+
+const getTheLatestArticlesCustomized = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { limit } = req.query;
+        const articles = await articlesRepositories.findUsersLatestArticlesCustomized(Number(limit) || 25);
+
+        return res.status(200).json({
+            status: 200,
+            message: "Latest articles fetched successfully",
+            data: articles
+        })
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message
+        })
+    }
+}
 export default {
     getPublishedArticles,
     getAllArticles,
@@ -423,5 +459,7 @@ export default {
     journalistGetMonthlyTopArticles,
     adminFetchJournalistAnalytics,
     getTopFeaturedArticles,
-    getTOpWeeklyArticlesByCategories
+    getTOpWeeklyArticlesByCategories,
+    userSearchArticles,
+    getTheLatestArticlesCustomized
 }

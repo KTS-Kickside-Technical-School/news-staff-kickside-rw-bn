@@ -47,4 +47,9 @@ articlesRoute.get('/journalist/:userId/analytics', articlesControllers.adminFetc
 articlesRoute.get("/get-top-featured-articles", articlesControllers.getTopFeaturedArticles);
 articlesRoute.get("/get-top-weekly-categories", articlesControllers.getTOpWeeklyArticlesByCategories);
 
+articlesRoute.get("/user-search", articlesControllers.userSearchArticles);
+
+
+articlesRoute.get("/get-latest-articles-customized", articlesControllers.getTheLatestArticlesCustomized);
+
 export default articlesRoute;
