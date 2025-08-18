@@ -684,7 +684,8 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
         const weeklyTop = await ArticleView.aggregate([
             {
                 $match: {
-                    createdAt: { $gte: startOfWeek }
+                    createdAt: { $gte: startOfWeek },
+                    status: "published"
                 }
             },
             {

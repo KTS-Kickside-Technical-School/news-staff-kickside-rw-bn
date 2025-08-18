@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import teamsRepositories from "../repository/tournamentsRepositories";
+import tournamentsRepositories from '../repository/tournamentsRepositories';
 
 const saveCountry = async (req: Request, res: Response): Promise<any> => {
     try {
         const { name, code, flagUrl } = req.body;
 
-        const country = await teamsRepositories.createCountry({
+        const country = await tournamentsRepositories.createCountry({
             name,
             code,
             flagUrl
@@ -27,7 +27,7 @@ const saveCountry = async (req: Request, res: Response): Promise<any> => {
 
 const getAllCountries = async (req: Request, res: Response): Promise<any> => {
     try {
-        const countries = await teamsRepositories.getAllCountries();
+        const countries = await tournamentsRepositories.getAllCountries();
         return res.status(200).json({
             status: 200,
             data: countries
@@ -46,7 +46,7 @@ const saveTeam = async (req: Request, res: Response): Promise<any> => {
     try {
         const { name, country, logo } = req.body;
 
-        const team = await teamsRepositories.createTeam({ name, country, logo });
+        const team = await tournamentsRepositories.createTeam({ name, country, logo });
 
         return res.status(201).json({
             status: 201,
@@ -64,7 +64,7 @@ const saveTeam = async (req: Request, res: Response): Promise<any> => {
 
 const getAllTeams = async (req: Request, res: Response): Promise<any> => {
     try {
-        const teams = await teamsRepositories.getAllTeams();
+        const teams = await tournamentsRepositories.getAllTeams();
         return res.status(200).json({
             status: 200,
             message: "Teams retrieved successfully",
@@ -78,9 +78,55 @@ const getAllTeams = async (req: Request, res: Response): Promise<any> => {
     }
 }
 
+const saveYear = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { startYear, endYear, isLatest } = req.body;
+        const name = `${startYear}/${endYear}`
+
+        if (isLatest) {
+            await tournamentsRepositories.setYearsUnLatest()
+        }
+
+        console.log(req.body);
+
+        const tournament = await tournamentsRepositories.createYear({ startYear, endYear, isLatest, name });
+        return res.status(201).json({
+            status: 201,
+            message: 'Tournament saved successfully',
+            data: tournament
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Error saving tournament',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+}
+
+const saveTournament = async (req: Request, res: Response): Promise<any> => {
+    try {
+        console.log("A")
+        const tournament = await tournamentsRepositories.createTournament(req.body);
+        return res.status(201).json({
+            status: 201,
+            message: 'Tournament saved successfully',
+            data: tournament
+        })
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Error saving tournament',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
     saveTeam,
-    getAllTeams
+    getAllTeams,
+    saveYear,
+    saveTournament
 }
