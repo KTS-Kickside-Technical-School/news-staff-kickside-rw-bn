@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import tournamentsRepositories from '../repository/tournamentsRepositories';
+import mongoose from 'mongoose';
 
 const saveCountry = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -122,11 +123,64 @@ const saveTournament = async (req: Request, res: Response): Promise<any> => {
     }
 }
 
+const getAllYears = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const years = await tournamentsRepositories.getAllYears();
+        return res.status(200).json({
+            status: 200,
+            message: 'Years retrieved successfully',
+            data: years
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Error retrieving years',
+        })
+    }
+}
+
+const getAllTournaments = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const tournaments = await tournamentsRepositories.getAllTournaments();
+        return res.status(200).json({
+            status: 200,
+            message: 'Tournaments retrieved successfully',
+            data: tournaments
+        });
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error retrieving tournaments',
+        })
+    }
+}
+
+const saveTournamentSeason = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const season = await tournamentsRepositories.saveTournamentSeason(req.body);
+        return res.status(201).json({
+            status: 201,
+            message: 'Tournament season saved successfully',
+            data: season
+        });
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error saving tournament season',
+        })
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
     saveTeam,
     getAllTeams,
     saveYear,
-    saveTournament
+    saveTournament,
+    getAllYears,
+    getAllTournaments,
+    saveTournamentSeason
 }

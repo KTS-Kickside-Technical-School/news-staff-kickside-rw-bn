@@ -25,3 +25,13 @@ export const newTournamentSchema = Joi.object({
     foundedYear: Joi.string().required(),
     type: Joi.string().required(),
 })
+
+export const newTournamentSeasonSchema = Joi.object({
+    tournament: Joi.string().required(),
+    name: Joi.string().required(),
+    year: Joi.string().required(),
+    teams: Joi.array().items(Joi.string()).required(),
+    startDate: Joi.string().required(),
+    endDate: Joi.string().required(),
+    status: Joi.string().required()
+})

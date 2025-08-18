@@ -3,11 +3,10 @@ import mongoose from "mongoose";
 export interface ITournamentPerYear {
     tournament: mongoose.Schema.Types.ObjectId;
     name: string;
-    description: string;
     year: mongoose.Schema.Types.ObjectId;
     teams: mongoose.Schema.Types.ObjectId[];
-    startDate: Date;
-    endDate: Date;
+    startDate: string;
+    endDate: string;
     status: string
 }
 
@@ -18,10 +17,6 @@ const tournamentPerYearSchema = new mongoose.Schema<ITournamentPerYear>({
         required: true,
     },
     name: {
-        type: String,
-        required: true,
-    },
-    description: {
         type: String,
         required: true,
     },
@@ -36,11 +31,11 @@ const tournamentPerYearSchema = new mongoose.Schema<ITournamentPerYear>({
         required: true,
     },
     startDate: {
-        type: Date,
+        type: String,
         required: true,
     },
     endDate: {
-        type: Date,
+        type: String,
         required: true,
     },
     status: {
@@ -48,7 +43,6 @@ const tournamentPerYearSchema = new mongoose.Schema<ITournamentPerYear>({
         enum: ["Upcoming", "Ongoing", "Completed"],
         default: "Upcoming",
         required: true,
-
     }
 })
 

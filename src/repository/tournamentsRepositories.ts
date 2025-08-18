@@ -1,6 +1,7 @@
 import Country, { ICountry } from "../database/models/country";
 import Team, { ITeam } from "../database/models/team";
 import Tournament, { ITournament } from "../database/models/tournament";
+import TournamentPerYear, { ITournamentPerYear } from "../database/models/tournamentPerYear";
 import Year, { IYears } from "../database/models/years";
 
 const createCountry = async (data: ICountry) => {
@@ -53,6 +54,31 @@ const createTournament = async (data: ITournament) => {
     return await Tournament.create(data);
 }
 
+const getAllYears = async () => {
+    return await Year.find()
+        .sort({
+            isLatest: -1,
+            startYear: -1,
+            endYear: -1
+        })
+}
+
+const getAllTournaments = async () => {
+    return await Tournament.find()
+        .populate("country")
+        .sort({
+            name: 1
+        })
+}
+
+const saveTournamentSeason = async (data: ITournamentPerYear) => {
+    return await TournamentPerYear.create(data);
+}
+
+const findTournamentSeasonBy4Attributes = async (attr1: string, value1: string, attr2: string, value2: string, attr3: string, value3: string, attr4: string, value4: string) => {
+    return await TournamentPerYear.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 });
+}
+
 export default {
     createCountry,
     getCountryByName,
@@ -64,5 +90,9 @@ export default {
     createYear,
     setYearsUnLatest,
     getTournamentByAttribute,
-    createTournament
+    createTournament,
+    getAllYears,
+    getAllTournaments,
+    saveTournamentSeason,
+    findTournamentSeasonBy4Attributes
 }

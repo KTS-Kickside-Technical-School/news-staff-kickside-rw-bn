@@ -58,3 +58,22 @@ export const isTournamentAlreadyExists = async (req: any, res: Response, next: N
         res.status(500).json({ status: 500, message: "Internal server error" });
     }
 }
+
+export const isTournamentSeasonAlreadyExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+
+        const { tournament, year, startDate, endDate } = req.body;
+        const tournamentSeasonExists = await tournamentsRepositories.findTournamentSeasonBy4Attributes("tournament", tournament, "year", year, "startDate", startDate, "endDate", endDate);
+
+        if (tournamentSeasonExists) {
+            return res.status(400).json({
+                status: 400,
+                message: "Tournament season already exists"
+            });
+        }
+        return next()
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}
