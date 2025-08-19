@@ -77,3 +77,38 @@ export const isTournamentSeasonAlreadyExists = async (req: any, res: Response, n
         res.status(500).json({ status: 500, message: "Internal server error" });
     }
 }
+
+export const isTournamentSeasonExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const season = await tournamentsRepositories.findTournamentSeasonById(req.params.id);
+
+        if (!season) {
+            return res.status(404).json({
+                status: 404,
+                message: "Tournament season not found"
+            });
+        }
+        req.season = season
+        return next()
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}
+
+export const isMatchAlreadyExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { homeTeam, awayTeam, date, tournamentSeason } = req.body;
+        const matchExists = await tournamentsRepositories.findMatchBy4Attributes("homeTeam", homeTeam, "awayTeam", awayTeam, "date", date, "tournamentSeason", tournamentSeason);
+        console.log(matchExists)
+        if (matchExists) {
+            return res.status(400).json({
+                status: 400,
+                message: "The match is already scheduled at the same time"
+            })
+        }
+        return next()
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}

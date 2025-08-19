@@ -35,3 +35,10 @@ export const newTournamentSeasonSchema = Joi.object({
     endDate: Joi.string().required(),
     status: Joi.string().required()
 })
+
+export const newMatchSchema = Joi.object({
+    homeTeam: Joi.string().required(),
+    awayTeam: Joi.string().required(),
+    tournamentSeason: Joi.string().required(),
+    matchTime: Joi.string().required(),
+})

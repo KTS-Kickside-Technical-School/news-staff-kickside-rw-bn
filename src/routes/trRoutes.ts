@@ -1,9 +1,9 @@
 import express from "express";
 import countriesController from "../controllers/tournamanetsController";
 import bodyValidation from "../middlewares/bodyValidation";
-import { newCountrySchema, newTeamSchema, newTournamentSchema, newTournamentSeasonSchema, newYearSchema } from "../validations/tournamentsValidations";
+import { newCountrySchema, newMatchSchema, newTeamSchema, newTournamentSchema, newTournamentSeasonSchema, newYearSchema } from "../validations/tournamentsValidations";
 import { userAuthorization } from "../middlewares/authorization";
-import { isCountryAlreadyExists, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
+import { isCountryAlreadyExists, isMatchAlreadyExists, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isTournamentSeasonExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
 
 const trRoutes = express.Router();
 
@@ -21,5 +21,8 @@ trRoutes.post("/new-tr", userAuthorization(["Admin", "Editor", "Journalist"]), b
 trRoutes.get("/tr", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllTournaments);
 
 trRoutes.post("/new-tr-season", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newTournamentSeasonSchema), isTournamentSeasonAlreadyExists, countriesController.saveTournamentSeason);
+trRoutes.get("/tr-seasons", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllTournamentsSeasons);
+trRoutes.get("/tr-season/:id", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
 
+trRoutes.post("/new-match", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newMatchSchema), isMatchAlreadyExists, countriesController.saveMatch);
 export default trRoutes;

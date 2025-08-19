@@ -1,4 +1,5 @@
 import Country, { ICountry } from "../database/models/country";
+import Match, { IMatch } from "../database/models/match";
 import Team, { ITeam } from "../database/models/team";
 import Tournament, { ITournament } from "../database/models/tournament";
 import TournamentPerYear, { ITournamentPerYear } from "../database/models/tournamentPerYear";
@@ -79,6 +80,115 @@ const findTournamentSeasonBy4Attributes = async (attr1: string, value1: string, 
     return await TournamentPerYear.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 });
 }
 
+const findAllTournamentsSeasons = async () => {
+    return await TournamentPerYear.aggregate([
+        // Lookup Tournament
+        {
+            $lookup: {
+                from: 'tournaments',
+                localField: 'tournament',
+                foreignField: '_id',
+                as: 'tournament'
+            }
+        },
+        { $unwind: '$tournament' },
+
+        // Lookup Year
+        {
+            $lookup: {
+                from: 'years',
+                localField: 'year',
+                foreignField: '_id',
+                as: 'year'
+            }
+        },
+        { $unwind: '$year' },
+
+        // Lookup Teams
+        {
+            $lookup: {
+                from: 'teams', // MongoDB collection name for Team
+                localField: 'teams',
+                foreignField: '_id',
+                as: 'teams'
+            }
+        },
+
+        // Optional: lookup country for each team
+        {
+            $unwind: {
+                path: '$teams',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $lookup: {
+                from: 'countries',
+                localField: 'teams.country',
+                foreignField: '_id',
+                as: 'teams.country'
+            }
+        },
+        {
+            $unwind: {
+                path: '$teams.country',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $group: {
+                _id: '$_id',
+                tournament: { $first: '$tournament' },
+                year: { $first: '$year' },
+                name: { $first: '$name' },
+                startDate: { $first: '$startDate' },
+                endDate: { $first: '$endDate' },
+                status: { $first: '$status' },
+                teams: { $push: '$teams' }
+            }
+        },
+
+        // Add status order for sorting
+        {
+            $addFields: {
+                statusOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ['$status', 'Ongoing'] }, then: 1 },
+                            { case: { $eq: ['$status', 'Upcoming'] }, then: 2 },
+                            { case: { $eq: ['$status', 'Completed'] }, then: 3 }
+                        ],
+                        default: 4
+                    }
+                }
+            }
+        },
+
+        // Final sort
+        {
+            $sort: {
+                statusOrder: 1,
+                'year.name': -1,
+                'tournament.name': 1,
+                'teams.name': 1
+            }
+        }
+    ]);
+};
+
+
+const findTournamentSeasonById = async (id: string) => {
+    return TournamentPerYear.findOne({ _id: id });
+}
+
+const findMatchBy4Attributes = async (attr1: string, value1: string, attr2: string, value2: string, attr3: string, value3: string, attr4: string, value4: string) => {
+    return Match.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 });
+}
+
+const saveMatch = async (data: IMatch) => {
+    return Match.create(data);
+}
+
 export default {
     createCountry,
     getCountryByName,
@@ -94,5 +204,9 @@ export default {
     getAllYears,
     getAllTournaments,
     saveTournamentSeason,
-    findTournamentSeasonBy4Attributes
+    findTournamentSeasonBy4Attributes,
+    findAllTournamentsSeasons,
+    findTournamentSeasonById,
+    findMatchBy4Attributes,
+    saveMatch
 }

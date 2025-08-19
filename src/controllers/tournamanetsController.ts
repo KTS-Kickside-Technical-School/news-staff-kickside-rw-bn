@@ -173,6 +173,56 @@ const saveTournamentSeason = async (req: Request, res: Response): Promise<any> =
     }
 }
 
+const getAllTournamentsSeasons = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const seasons = await tournamentsRepositories.findAllTournamentsSeasons();
+        return res.status(200).json({
+            status: 200,
+            message: 'Tournaments seasons retrieved successfully',
+            data: seasons
+        });
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error retrieving tournaments',
+        })
+    }
+}
+
+const getSingleTournamentSeason = async (req: any, res: Response): Promise<any> => {
+    try {
+        return res.status(200).json({
+            status: 200,
+            message: 'Tournament season retrieved successfully',
+            data: req.season
+        })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error retrieving tournament',
+        })
+    }
+}
+
+const saveMatch = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const match = await tournamentsRepositories.saveMatch(req.body);
+        return res.status(201).json({
+            status: 201,
+            message: 'Match saved successfully',
+            data: match
+        });
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error saving match',
+        })
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
@@ -182,5 +232,8 @@ export default {
     saveTournament,
     getAllYears,
     getAllTournaments,
-    saveTournamentSeason
+    saveTournamentSeason,
+    getAllTournamentsSeasons,
+    getSingleTournamentSeason,
+    saveMatch
 }
