@@ -1,5 +1,6 @@
 import Country, { ICountry } from "../database/models/country";
 import Match, { IMatch } from "../database/models/match";
+import MatchActivities from "../database/models/matchActivities";
 import Team, { ITeam } from "../database/models/team";
 import Tournament, { ITournament } from "../database/models/tournament";
 import TournamentPerYear, { ITournamentPerYear } from "../database/models/tournamentPerYear";
@@ -460,6 +461,34 @@ const findHomepageMatches = async () => {
     return matches;
 };
 
+const findMatchById = async (_id) => {
+    const match = await Match.findById(_id)
+        .populate({
+            path: 'homeTeam',
+        })
+        .populate({
+            path: 'awayTeam',
+        })
+        .populate({
+            path: 'tournamentSeason',
+            populate: [{
+                path: 'tournament',
+            }, {
+                path: 'teams',
+            }, { path: "year" }]
+        })
+        .exec();
+
+    return match;
+};
+
+const findMatchActivities = async (matchId: string) => {
+    return await MatchActivities.findOne({ match: matchId })
+}
+
+const updateMatch = async (_id: string, data: any) => {
+    return await Match.findByIdAndUpdate(_id, data, { new: true });
+}
 
 
 export default {
@@ -483,5 +512,8 @@ export default {
     findMatchBy4Attributes,
     saveMatch,
     findAllMatches,
-    findHomepageMatches
+    findHomepageMatches,
+    findMatchById,
+    findMatchActivities,
+    updateMatch
 }

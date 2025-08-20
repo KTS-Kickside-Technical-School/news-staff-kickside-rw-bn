@@ -88,8 +88,6 @@ const saveYear = async (req: Request, res: Response): Promise<any> => {
             await tournamentsRepositories.setYearsUnLatest()
         }
 
-        console.log(req.body);
-
         const tournament = await tournamentsRepositories.createYear({ startYear, endYear, isLatest, name });
         return res.status(201).json({
             status: 201,
@@ -107,7 +105,7 @@ const saveYear = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournament = async (req: Request, res: Response): Promise<any> => {
     try {
-        console.log("A")
+
         const tournament = await tournamentsRepositories.createTournament(req.body);
         return res.status(201).json({
             status: 201,
@@ -241,10 +239,9 @@ const getAllMatches = async (req: Request, res: Response): Promise<any> => {
 
 const getHomepageMatches = async (req: Request, res: Response): Promise<any> => {
     try {
-        console.log("Matches")
+
         const matches = await tournamentsRepositories.findHomepageMatches();
-        console.log(matches);
-       
+
         return res.status(200).json({
             status: 200,
             message: 'Homepage matches retrieved successfully',
@@ -255,6 +252,41 @@ const getHomepageMatches = async (req: Request, res: Response): Promise<any> => 
         return res.status(500).json({
             status: 500,
             message: error.message || "Error getting homepage matches"
+        })
+    }
+}
+
+const getSingleMatch = async (req: any, res: Response): Promise<any> => {
+    try {
+        return res.status(200).json({
+            status: 200,
+            message: "Match retrieved successfully",
+            data: {
+                match: req.match,
+                matchActivities: req.matchActivities
+            }
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error retrieving match"
+        })
+    }
+}
+
+const updateMatch = async (req: any, res: Response): Promise<any> => {
+    try {
+
+        const match = await tournamentsRepositories.updateMatch(req.match, req.body);
+        return res.status(200).json({
+            status: 200,
+            message: "Match updated successfully",
+            data: match
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error updating match"
         })
     }
 }
@@ -273,5 +305,7 @@ export default {
     getSingleTournamentSeason,
     saveMatch,
     getAllMatches,
-    getHomepageMatches
+    getHomepageMatches,
+    getSingleMatch,
+    updateMatch
 }

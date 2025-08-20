@@ -100,13 +100,36 @@ export const isMatchAlreadyExists = async (req: any, res: Response, next: NextFu
     try {
         const { homeTeam, awayTeam, matchTime, tournamentSeason } = req.body;
         const matchExists = await tournamentsRepositories.findMatchBy4Attributes("homeTeam", homeTeam, "awayTeam", awayTeam, "matchTime", matchTime, "tournamentSeason", tournamentSeason);
-        console.log(matchExists)
+
         if (matchExists) {
             return res.status(400).json({
                 status: 400,
                 message: "The match is already scheduled at the same time"
             })
         }
+        return next()
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}
+
+export const isMatchExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const match = await tournamentsRepositories.findMatchById(id);
+        if (!match) {
+            return res.status(404).json({
+                status: 404,
+                message: "Match not found"
+            });
+        }
+
+        const matchActivities = await tournamentsRepositories.findMatchActivities(id);
+
+
+        req.match = match
+        req.matchActivities = matchActivities
+        
         return next()
     } catch (error) {
         return res.status(500).json({ status: 500, message: "Internal server error" });

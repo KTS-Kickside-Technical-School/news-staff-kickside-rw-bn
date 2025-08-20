@@ -333,7 +333,6 @@ const journalistGetMonthlyTopArticles = async (req: any, res: Response): Promise
         const year = parseInt(req.query.year) || new Date().getFullYear();
         const month = parseInt(req.query.month) || new Date().getMonth();
 
-        console.log(month)
         if (month < 1 || month > 12) {
             return res.status(400).json({ status: 400, message: "Invalid month value" });
         }
@@ -356,7 +355,7 @@ const journalistGetMonthlyTopArticles = async (req: any, res: Response): Promise
 export const adminFetchJournalistAnalytics = async (req, res) => {
     try {
         const { userId } = req.params;
-        console.log(userId)
+
         const analytics = await articlesRepositories.adminGetJournalistAnalytics(userId);
         res.status(200).json({
             status: 200,
