@@ -98,8 +98,8 @@ export const isTournamentSeasonExists = async (req: any, res: Response, next: Ne
 
 export const isMatchAlreadyExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
-        const { homeTeam, awayTeam, date, tournamentSeason } = req.body;
-        const matchExists = await tournamentsRepositories.findMatchBy4Attributes("homeTeam", homeTeam, "awayTeam", awayTeam, "date", date, "tournamentSeason", tournamentSeason);
+        const { homeTeam, awayTeam, matchTime, tournamentSeason } = req.body;
+        const matchExists = await tournamentsRepositories.findMatchBy4Attributes("homeTeam", homeTeam, "awayTeam", awayTeam, "matchTime", matchTime, "tournamentSeason", tournamentSeason);
         console.log(matchExists)
         if (matchExists) {
             return res.status(400).json({

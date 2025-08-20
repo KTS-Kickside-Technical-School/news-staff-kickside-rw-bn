@@ -4,6 +4,8 @@ import bodyValidation from "../middlewares/bodyValidation";
 import { newCountrySchema, newMatchSchema, newTeamSchema, newTournamentSchema, newTournamentSeasonSchema, newYearSchema } from "../validations/tournamentsValidations";
 import { userAuthorization } from "../middlewares/authorization";
 import { isCountryAlreadyExists, isMatchAlreadyExists, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isTournamentSeasonExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
+import tournamentsRepositories from "../repository/tournamentsRepositories";
+import tournamanetsController from "../controllers/tournamanetsController";
 
 const trRoutes = express.Router();
 
@@ -25,4 +27,13 @@ trRoutes.get("/tr-seasons", userAuthorization(["Admin", "Editor", "Journalist"])
 trRoutes.get("/tr-season/:id", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
 
 trRoutes.post("/new-match", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newMatchSchema), isMatchAlreadyExists, countriesController.saveMatch);
+trRoutes.get("/matches", userAuthorization(["Admin", "Editor", "Journalist"]), tournamanetsController.getAllMatches);
+trRoutes.get('/hp-matches', tournamanetsController.getHomepageMatches);
+
+
+
+
+
+
+
 export default trRoutes;

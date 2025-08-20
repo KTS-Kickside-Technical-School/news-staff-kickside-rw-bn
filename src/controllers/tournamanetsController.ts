@@ -223,6 +223,42 @@ const saveMatch = async (req: Request, res: Response): Promise<any> => {
     }
 }
 
+const getAllMatches = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const matches = await tournamentsRepositories.findAllMatches();
+        return res.status(200).json({
+            status: 200,
+            message: "Matches retrieved successfully",
+            data: matches
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error retrieving matches"
+        })
+    }
+}
+
+const getHomepageMatches = async (req: Request, res: Response): Promise<any> => {
+    try {
+        console.log("Matches")
+        const matches = await tournamentsRepositories.findHomepageMatches();
+        console.log(matches);
+       
+        return res.status(200).json({
+            status: 200,
+            message: 'Homepage matches retrieved successfully',
+            data: matches
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error getting homepage matches"
+        })
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
@@ -235,5 +271,7 @@ export default {
     saveTournamentSeason,
     getAllTournamentsSeasons,
     getSingleTournamentSeason,
-    saveMatch
+    saveMatch,
+    getAllMatches,
+    getHomepageMatches
 }

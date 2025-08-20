@@ -21,9 +21,10 @@ const matchSchema = new Schema({
     matchTime: { type: String, default: Date.now },
     status: {
         type: String, default: 'scheduled',
-        enum: ['scheduled', 'in_progress', 'finished']
+        enum: ['scheduled', 'in_progress', 'finished', 'postponed']
     }
-})
+}, { timestamps: true }
+)
 
 
 const Match = mongoose.model<IMatch>('Match', matchSchema);

@@ -82,7 +82,6 @@ const findTournamentSeasonBy4Attributes = async (attr1: string, value1: string, 
 
 const findAllTournamentsSeasons = async () => {
     return await TournamentPerYear.aggregate([
-        // Lookup Tournament
         {
             $lookup: {
                 from: 'tournaments',
@@ -93,7 +92,6 @@ const findAllTournamentsSeasons = async () => {
         },
         { $unwind: '$tournament' },
 
-        // Lookup Year
         {
             $lookup: {
                 from: 'years',
@@ -104,17 +102,15 @@ const findAllTournamentsSeasons = async () => {
         },
         { $unwind: '$year' },
 
-        // Lookup Teams
         {
             $lookup: {
-                from: 'teams', // MongoDB collection name for Team
+                from: 'teams',
                 localField: 'teams',
                 foreignField: '_id',
                 as: 'teams'
             }
         },
 
-        // Optional: lookup country for each team
         {
             $unwind: {
                 path: '$teams',
@@ -148,7 +144,6 @@ const findAllTournamentsSeasons = async () => {
             }
         },
 
-        // Add status order for sorting
         {
             $addFields: {
                 statusOrder: {
@@ -164,7 +159,6 @@ const findAllTournamentsSeasons = async () => {
             }
         },
 
-        // Final sort
         {
             $sort: {
                 statusOrder: 1,
@@ -189,6 +183,285 @@ const saveMatch = async (data: IMatch) => {
     return Match.create(data);
 }
 
+const findAllMatches = async () => {
+    return await Match.aggregate([
+        {
+            $addFields: {
+                sortOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "in_progress"] }, then: 1 },
+                            { case: { $eq: ["$status", "scheduled"] }, then: 2 },
+                            { case: { $eq: ["$status", "finished"] }, then: 3 },
+                        ],
+                        default: 4,
+                    },
+                },
+            },
+        },
+        { $sort: { sortOrder: 1, matchTime: 1 } },
+        {
+            $lookup: {
+                from: "tournamentperyears",
+                localField: "tournamentSeason",
+                foreignField: "_id",
+                as: "tournamentSeason",
+            },
+        },
+        { $unwind: { path: "$tournamentSeason", preserveNullAndEmptyArrays: true } },
+
+        {
+            $lookup: {
+                from: "teams",
+                localField: "homeTeam",
+                foreignField: "_id",
+                as: "homeTeam",
+            },
+        },
+        { $unwind: { path: "$homeTeam", preserveNullAndEmptyArrays: true } },
+
+        {
+            $lookup: {
+                from: "teams",
+                localField: "awayTeam",
+                foreignField: "_id",
+                as: "awayTeam",
+            },
+        },
+        { $unwind: { path: "$awayTeam", preserveNullAndEmptyArrays: true } },
+    ]);
+};
+
+
+const findHomepageMatches = async () => {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+    // Step 1: Try yesterday finished/postponed + next 2 days any status except finished
+    let matches = await Match.aggregate([
+        // Convert matchTime string → Date
+        {
+            $addFields: {
+                matchTimeDate: {
+                    $dateFromString: { dateString: "$matchTime" }
+                }
+            }
+        },
+        {
+            $match: {
+                $or: [
+                    // finished or postponed yesterday
+                    {
+                        status: { $in: ["finished", "postponed"] },
+                        matchTimeDate: { $gte: yesterday, $lt: now }
+                    },
+
+                    // any upcoming (not finished) within next 2 days
+                    {
+                        status: { $ne: "finished" },
+                        matchTimeDate: { $gte: now, $lte: twoDaysLater }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                statusOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "in_progress"] }, then: 1 },
+                            { case: { $eq: ["$status", "scheduled"] }, then: 2 },
+                            { case: { $eq: ["$status", "postponed"] }, then: 3 },
+                            { case: { $eq: ["$status", "finished"] }, then: 4 }
+                        ],
+                        default: 99
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "teams",
+                localField: "homeTeam",
+                foreignField: "_id",
+                as: "homeTeam"
+            }
+        },
+        { $unwind: "$homeTeam" },
+        {
+            $lookup: {
+                from: "teams",
+                localField: "awayTeam",
+                foreignField: "_id",
+                as: "awayTeam"
+            }
+        },
+        { $unwind: "$awayTeam" },
+        {
+            $lookup: {
+                from: "tournamentperyears",
+                localField: "tournamentSeason",
+                foreignField: "_id",
+                as: "tournamentSeason"
+            }
+        },
+        { $unwind: "$tournamentSeason" },
+        {
+            $group: {
+                _id: "$tournamentSeason.name",
+                tournament: { $first: "$tournamentSeason" },
+                matches: {
+                    $push: {
+                        _id: "$_id",
+                        homeTeam: "$homeTeam",
+                        awayTeam: "$awayTeam",
+                        homeScore: "$homeScore",
+                        awayScore: "$awayScore",
+                        status: "$status",
+                        matchTime: "$matchTime", // keep original string
+                        matchTimeDate: "$matchTimeDate", // new parsed date
+                        statusOrder: "$statusOrder"
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                tournamentName: "$_id",
+                tournament: 1,
+                matches: 1
+            }
+        },
+        {
+            $sort: {
+                "tournament.priority": 1,
+                "tournament.name": 1
+            }
+        },
+        {
+            $addFields: {
+                matches: {
+                    $sortArray: {
+                        input: "$matches",
+                        sortBy: { statusOrder: 1, matchTimeDate: 1 }
+                    }
+                }
+            }
+        }
+    ]);
+
+    // Step 2: Fallback → last 3 days finished/postponed
+    if (!matches.length) {
+        matches = await Match.aggregate([
+            {
+                $addFields: {
+                    matchTimeDate: {
+                        $dateFromString: { dateString: "$matchTime" }
+                    }
+                }
+            },
+            {
+                $match: {
+                    status: { $in: ["finished", "postponed"] },
+                    matchTimeDate: { $gte: threeDaysAgo, $lt: now }
+                }
+            },
+            {
+                $addFields: {
+                    statusOrder: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$status", "in_progress"] }, then: 1 },
+                                { case: { $eq: ["$status", "scheduled"] }, then: 2 },
+                                { case: { $eq: ["$status", "postponed"] }, then: 3 },
+                                { case: { $eq: ["$status", "finished"] }, then: 4 }
+                            ],
+                            default: 99
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: "teams",
+                    localField: "homeTeam",
+                    foreignField: "_id",
+                    as: "homeTeam"
+                }
+            },
+            { $unwind: "$homeTeam" },
+            {
+                $lookup: {
+                    from: "teams",
+                    localField: "awayTeam",
+                    foreignField: "_id",
+                    as: "awayTeam"
+                }
+            },
+            { $unwind: "$awayTeam" },
+            {
+                $lookup: {
+                    from: "tournamentperyears",
+                    localField: "tournamentSeason",
+                    foreignField: "_id",
+                    as: "tournamentSeason"
+                }
+            },
+            { $unwind: "$tournamentSeason" },
+            {
+                $group: {
+                    _id: "$tournamentSeason.name",
+                    tournament: { $first: "$tournamentSeason" },
+                    matches: {
+                        $push: {
+                            _id: "$_id",
+                            homeTeam: "$homeTeam",
+                            awayTeam: "$awayTeam",
+                            homeScore: "$homeScore",
+                            awayScore: "$awayScore",
+                            status: "$status",
+                            matchTime: "$matchTime",
+                            matchTimeDate: "$matchTimeDate",
+                            statusOrder: "$statusOrder"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    tournamentName: "$_id",
+                    tournament: 1,
+                    matches: 1
+                }
+            },
+            {
+                $sort: {
+                    "tournament.priority": 1,
+                    "tournament.name": 1
+                }
+            },
+            {
+                $addFields: {
+                    matches: {
+                        $sortArray: {
+                            input: "$matches",
+                            sortBy: { statusOrder: 1, matchTimeDate: 1 }
+                        }
+                    }
+                }
+            }
+        ]);
+    }
+
+    return matches;
+};
+
+
+
 export default {
     createCountry,
     getCountryByName,
@@ -208,5 +481,7 @@ export default {
     findAllTournamentsSeasons,
     findTournamentSeasonById,
     findMatchBy4Attributes,
-    saveMatch
+    saveMatch,
+    findAllMatches,
+    findHomepageMatches
 }
