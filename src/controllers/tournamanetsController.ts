@@ -291,6 +291,81 @@ const updateMatch = async (req: any, res: Response): Promise<any> => {
     }
 }
 
+const savePlayer = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const player = await tournamentsRepositories.savePlayer(req.body);
+        return res.status(201).json({
+            status: 201,
+            message: "Player saved successfully",
+            data: player
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error saving player"
+        })
+    }
+}
+
+const getAllPlayers = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const players = await tournamentsRepositories.findAllPlayers();
+        return res.status(200).json({
+            status: 200,
+            message: "Players retrieved successfully",
+            data: players
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error retrieving players"
+        })
+    }
+}
+
+const saveTeamPlayer = async (req: Request, res: Response): Promise<any> => {
+    try {
+        console.log(req.body)
+        if (req.body.stillPlaying === true) {
+            const a = await tournamentsRepositories.updatePlayerInTheTeamLastPlayings(req.body.player);
+
+            console.log(a)
+        }
+
+
+        const teamPlayer = await tournamentsRepositories.saveTeamPlayer(req.body);
+
+        return res.status(201).json({
+            status: 201,
+            message: "Team player saved successfully",
+            data: teamPlayer
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error saving team player"
+        })
+    }
+}
+
+const getSinglePlayer = async (req: any, res: Response): Promise<any> => {
+    try {
+        return res.status(200).json({
+            status: 200,
+            message: "Player retrieved successfully",
+            data: {
+                player: req.player,
+                playerTeams: req.playerTeams
+            }
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error retrieving player"
+        })
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
@@ -307,5 +382,9 @@ export default {
     getAllMatches,
     getHomepageMatches,
     getSingleMatch,
-    updateMatch
+    updateMatch,
+    savePlayer,
+    getAllPlayers,
+    saveTeamPlayer,
+    getSinglePlayer
 }

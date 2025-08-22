@@ -129,9 +129,50 @@ export const isMatchExists = async (req: any, res: Response, next: NextFunction)
 
         req.match = match
         req.matchActivities = matchActivities
-        
+
         return next()
     } catch (error) {
         return res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}
+
+export const isPlayerArleadyInTheTeam = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { player, team } = req.body
+        const PlayerInTheTeam = await tournamentsRepositories.findPlayerInTheTeamByPlayerAndTeamAndTrue(player, team)
+
+        if (PlayerInTheTeam && PlayerInTheTeam.stillPlaying === true) {
+            return res.status(400).json({
+                status: 400,
+                message: "Player already in the team"
+            })
+        }
+        return next()
+    }
+    catch (error: any) {
+        return res.status(500).json({ status: 500, message: error.message || "Internal server error" });
+    }
+}
+
+export const isPlayerExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { id } = req.params
+        const playerExists = await tournamentsRepositories.findPlayerById(id)
+
+        if (!playerExists) {
+            return res.status(400).json({
+                status: 400,
+                message: "Player not found"
+            })
+        }
+
+        const playerTeams = await tournamentsRepositories.findPlayerInTheTeamsByPlayerId(id);
+
+        req.player = playerExists;
+        req.playerTeams = playerTeams;
+
+        return next()
+    } catch (error: any) {
+        return res.status(500).json({ status: 500, message: error.message || "Internal server error" });
     }
 }

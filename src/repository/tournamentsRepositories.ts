@@ -1,7 +1,9 @@
 import Country, { ICountry } from "../database/models/country";
 import Match, { IMatch } from "../database/models/match";
 import MatchActivities from "../database/models/matchActivities";
+import Player from "../database/models/player";
 import Team, { ITeam } from "../database/models/team";
+import TeamPlayer from "../database/models/teamPlayer";
 import Tournament, { ITournament } from "../database/models/tournament";
 import TournamentPerYear, { ITournamentPerYear } from "../database/models/tournamentPerYear";
 import Year, { IYears } from "../database/models/years";
@@ -490,6 +492,48 @@ const updateMatch = async (_id: string, data: any) => {
     return await Match.findByIdAndUpdate(_id, data, { new: true });
 }
 
+const savePlayer = async (data: any) => {
+    return await Player.create(data)
+}
+
+const findAllPlayers = async () => {
+    return await Player.find().sort({
+        firstname: 1,
+        lastname: 1
+    })
+}
+
+const findPlayerInTheTeamByPlayerAndTeamAndTrue = async (playerId: string, teamId: string) => {
+    return await TeamPlayer.findOne({ player: playerId, team: teamId, stillPlaying: true })
+}
+
+const updatePlayerInTheTeamLastPlayings = async (player: any) => {
+    return await TeamPlayer.updateMany(
+        { player },
+        { $set: { stillPlaying: false } },
+    );
+};
+
+const saveTeamPlayer = async (data: any) => {
+    return await TeamPlayer.create(data)
+}
+
+const findPlayerById = async (_id: any) => {
+    return await Player.findById(_id)
+}
+
+const findPlayerInTheTeamsByPlayerId = async (player: any) => {
+    return await TeamPlayer.find({ player }).populate("team").populate("player")
+        .sort({
+            startDate: -1,
+            endDate: -1
+        }
+        )
+}
+
+const updatePlayerInTheTeam = async (_id: string, data: any) => {
+    return await TeamPlayer.findByIdAndUpdate(_id, data, { new: true });
+}
 
 export default {
     createCountry,
@@ -515,5 +559,12 @@ export default {
     findHomepageMatches,
     findMatchById,
     findMatchActivities,
-    updateMatch
+    updateMatch,
+    savePlayer,
+    findAllPlayers,
+    findPlayerInTheTeamByPlayerAndTeamAndTrue,
+    updatePlayerInTheTeamLastPlayings,
+    saveTeamPlayer,
+    findPlayerById,
+    findPlayerInTheTeamsByPlayerId
 }

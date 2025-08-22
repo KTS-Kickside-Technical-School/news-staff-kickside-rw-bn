@@ -53,3 +53,19 @@ export const updateMatchSchema = Joi.object({
     matchDuration: Joi.string(),
     status: Joi.string(),
 })
+
+
+export const newPlayerSchema = Joi.object({
+    firstname: Joi.string().required(),
+    lastname: Joi.string(),
+    birthdate: Joi.string(),
+    nationality: Joi.string().required(),
+})
+
+export const newTeamPlayerSchema = Joi.object({
+    team: Joi.string().required(),
+    player: Joi.string().required(),
+    startDate: Joi.date().required(),
+    endDate: Joi.date().required(),
+    stillPlaying: Joi.boolean().required(),
+})
