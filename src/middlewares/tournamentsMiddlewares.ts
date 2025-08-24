@@ -115,7 +115,7 @@ export const isMatchAlreadyExists = async (req: any, res: Response, next: NextFu
 
 export const isMatchExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
-        const { id } = req.params;
+        const id = req.params.id || req.body.match;
         const match = await tournamentsRepositories.findMatchById(id);
         if (!match) {
             return res.status(404).json({
@@ -173,6 +173,31 @@ export const isPlayerExists = async (req: any, res: Response, next: NextFunction
 
         return next()
     } catch (error: any) {
+        return res.status(500).json({ status: 500, message: error.message || "Internal server error" });
+    }
+}
+
+export const isSeasonExistBySlug = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const { slug } = req.params
+        const seasonExists = await tournamentsRepositories.findSeasonBySlug(slug)
+
+        if (!seasonExists) {
+            return res.status(400).json({
+                status: 400,
+                message: "Season not found"
+            })
+        }
+
+        req.season = seasonExists;
+
+        const matches = await tournamentsRepositories.findAllMatches({ tournament: seasonExists._id })
+
+        req.matches = matches;
+
+        return next()
+    }
+    catch (error: any) {
         return res.status(500).json({ status: 500, message: error.message || "Internal server error" });
     }
 }

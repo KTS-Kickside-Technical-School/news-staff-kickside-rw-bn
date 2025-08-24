@@ -3,8 +3,7 @@ import countriesController from "../controllers/tournamanetsController";
 import bodyValidation from "../middlewares/bodyValidation";
 import { newCountrySchema, newMatchSchema, newPlayerSchema, newTeamPlayerSchema, newTeamSchema, newTournamentSchema, newTournamentSeasonSchema, newYearSchema, updateMatchSchema } from "../validations/tournamentsValidations";
 import { userAuthorization } from "../middlewares/authorization";
-import { isCountryAlreadyExists, isMatchAlreadyExists, isMatchExists, isPlayerArleadyInTheTeam, isPlayerExists, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isTournamentSeasonExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
-import tournamentsRepositories from "../repository/tournamentsRepositories";
+import { isCountryAlreadyExists, isMatchAlreadyExists, isMatchExists, isPlayerArleadyInTheTeam, isPlayerExists, isSeasonExistBySlug, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isTournamentSeasonExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
 import tournamanetsController from "../controllers/tournamanetsController";
 
 const trRoutes = express.Router();
@@ -25,12 +24,15 @@ trRoutes.get("/tr", userAuthorization(["Admin", "Editor", "Journalist"]), countr
 trRoutes.post("/new-tr-season", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newTournamentSeasonSchema), isTournamentSeasonAlreadyExists, countriesController.saveTournamentSeason);
 trRoutes.get("/tr-seasons", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllTournamentsSeasons);
 trRoutes.get("/tr-season/:id", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
+trRoutes.get("/tr-latest-seasons", tournamanetsController.getLatestSeasons)
+trRoutes.get('/:slug/matches', isSeasonExistBySlug, tournamanetsController.getTournamentSeasonMatches)
 
 trRoutes.post("/new-match", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newMatchSchema), isMatchAlreadyExists, countriesController.saveMatch);
-trRoutes.get("/matches", userAuthorization(["Admin", "Editor", "Journalist"]), tournamanetsController.getAllMatches);
+trRoutes.get("/matches", tournamanetsController.getAllMatches);
 trRoutes.get('/hp-matches', tournamanetsController.getHomepageMatches);
 trRoutes.get("/match-info/:id", isMatchExists, tournamanetsController.getSingleMatch);
 trRoutes.put("/match-update/:id", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(updateMatchSchema), isMatchExists, tournamanetsController.updateMatch);
+trRoutes.post("/new-match-event", userAuthorization(["Admin", "Editor", "Journalist"]), isMatchExists, tournamanetsController.saveMatchEvent);
 
 trRoutes.post("/new-player", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newPlayerSchema), tournamanetsController.savePlayer);
 trRoutes.get("/players", userAuthorization(["Admin", "Editor", "Journalist"]), tournamanetsController.getAllPlayers);

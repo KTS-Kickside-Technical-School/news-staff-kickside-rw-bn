@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Country, { ICountry } from "../database/models/country";
 import Match, { IMatch } from "../database/models/match";
 import MatchActivities from "../database/models/matchActivities";
@@ -173,6 +174,104 @@ const findAllTournamentsSeasons = async () => {
     ]);
 };
 
+const findLatestTournamentsSeasons = async () => {
+    return await TournamentPerYear.aggregate([
+        {
+            $lookup: {
+                from: "tournaments",
+                localField: "tournament",
+                foreignField: "_id",
+                as: "tournament",
+            },
+        },
+        { $unwind: "$tournament" },
+
+        {
+            $lookup: {
+                from: "years",
+                localField: "year",
+                foreignField: "_id",
+                as: "year",
+            },
+        },
+        { $unwind: "$year" },
+
+        {
+            $match: {
+                "year.isLatest": true,
+            },
+        },
+
+        {
+            $lookup: {
+                from: "teams",
+                localField: "teams",
+                foreignField: "_id",
+                as: "teams",
+            },
+        },
+
+        {
+            $unwind: {
+                path: "$teams",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        {
+            $lookup: {
+                from: "countries",
+                localField: "teams.country",
+                foreignField: "_id",
+                as: "teams.country",
+            },
+        },
+        {
+            $unwind: {
+                path: "$teams.country",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        {
+            $group: {
+                _id: "$_id",
+                tournament: { $first: "$tournament" },
+                year: { $first: "$year" },
+                name: { $first: "$name" },
+                slug: { $first: "$slug" },
+                startDate: { $first: "$startDate" },
+                endDate: { $first: "$endDate" },
+                status: { $first: "$status" },
+                teams: { $push: "$teams" },
+            },
+        },
+
+        {
+            $addFields: {
+                statusOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$status", "Ongoing"] }, then: 1 },
+                            { case: { $eq: ["$status", "Upcoming"] }, then: 2 },
+                            { case: { $eq: ["$status", "Completed"] }, then: 3 },
+                        ],
+                        default: 4,
+                    },
+                },
+            },
+        },
+
+        {
+            $sort: {
+                statusOrder: 1,
+                "year.name": -1, // ✅ still sort by latest year name if multiple
+                "tournament.name": 1,
+                "teams.name": 1,
+            },
+        },
+    ]);
+};
+
+
 
 const findTournamentSeasonById = async (id: string) => {
     return TournamentPerYear.findOne({ _id: id });
@@ -186,8 +285,31 @@ const saveMatch = async (data: IMatch) => {
     return Match.create(data);
 }
 
-const findAllMatches = async () => {
-    return await Match.aggregate([
+const findAllMatches = async (filters: any) => {
+    const matchStage: any = {};
+
+    if (filters.tournament) {
+        matchStage["tournamentSeason"] = new mongoose.Types.ObjectId(filters.tournament);
+    }
+
+    if (filters.team) {
+        matchStage["$or"] = [
+            { homeTeam: new mongoose.Types.ObjectId(filters.team) },
+            { awayTeam: new mongoose.Types.ObjectId(filters.team) },
+        ];
+    }
+
+    if (filters.status) {
+        matchStage["status"] = filters.status;
+    }
+
+    const pipeline: any[] = [];
+
+    if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage });
+    }
+
+    pipeline.push(
         {
             $addFields: {
                 sortOrder: {
@@ -203,6 +325,7 @@ const findAllMatches = async () => {
             },
         },
         { $sort: { sortOrder: 1, matchTime: 1 } },
+
         {
             $lookup: {
                 from: "tournamentperyears",
@@ -212,7 +335,6 @@ const findAllMatches = async () => {
             },
         },
         { $unwind: { path: "$tournamentSeason", preserveNullAndEmptyArrays: true } },
-
         {
             $lookup: {
                 from: "teams",
@@ -222,7 +344,6 @@ const findAllMatches = async () => {
             },
         },
         { $unwind: { path: "$homeTeam", preserveNullAndEmptyArrays: true } },
-
         {
             $lookup: {
                 from: "teams",
@@ -231,8 +352,18 @@ const findAllMatches = async () => {
                 as: "awayTeam",
             },
         },
-        { $unwind: { path: "$awayTeam", preserveNullAndEmptyArrays: true } },
-    ]);
+        { $unwind: { path: "$awayTeam", preserveNullAndEmptyArrays: true } }
+    );
+
+    if (filters.skip) {
+        pipeline.push({ $skip: filters.skip });
+    }
+
+    if (filters.limit) {
+        pipeline.push({ $limit: filters.limit });
+    }
+
+    return await Match.aggregate(pipeline);
 };
 
 
@@ -485,11 +616,11 @@ const findMatchById = async (_id) => {
 };
 
 const findMatchActivities = async (matchId: string) => {
-    return await MatchActivities.findOne({ match: matchId })
+    return await MatchActivities.find({ match: matchId }).sort({ minute: -1 })
 }
 
-const updateMatch = async (_id: string, data: any) => {
-    return await Match.findByIdAndUpdate(_id, data, { new: true });
+const updateMatch = async (_id: any, data: any) => {
+    return await Match.findOneAndUpdate({ _id }, data, { new: true });
 }
 
 const savePlayer = async (data: any) => {
@@ -531,9 +662,26 @@ const findPlayerInTheTeamsByPlayerId = async (player: any) => {
         )
 }
 
+const findTeamCurrentPlayers = async (team: any) => {
+    return await TeamPlayer.find({ team, stillPlaying: true }).populate("team").populate("player")
+        .sort({
+            startDate: -1,
+            endDate: -1
+        })
+}
+
+const saveMatchEvent = async (data: any) => {
+    return await MatchActivities.create(data)
+}
+
+const findSeasonBySlug = async (slug: string) => {
+    return await TournamentPerYear.findOne({ slug }).populate("tournament").populate("teams");
+}
+
 const updatePlayerInTheTeam = async (_id: string, data: any) => {
     return await TeamPlayer.findByIdAndUpdate(_id, data, { new: true });
 }
+
 
 export default {
     createCountry,
@@ -566,5 +714,9 @@ export default {
     updatePlayerInTheTeamLastPlayings,
     saveTeamPlayer,
     findPlayerById,
-    findPlayerInTheTeamsByPlayerId
+    findPlayerInTheTeamsByPlayerId,
+    findTeamCurrentPlayers,
+    saveMatchEvent,
+    findLatestTournamentsSeasons,
+    findSeasonBySlug
 }

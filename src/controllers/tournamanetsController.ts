@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import tournamentsRepositories from '../repository/tournamentsRepositories';
 import mongoose from 'mongoose';
+import Match from '../database/models/match';
 
 const saveCountry = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -188,6 +189,23 @@ const getAllTournamentsSeasons = async (req: Request, res: Response): Promise<an
     }
 }
 
+const getLatestSeasons = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const seasons = await tournamentsRepositories.findLatestTournamentsSeasons();
+        return res.status(200).json({
+            status: 200,
+            message: 'Tournaments seasons retrieved successfully',
+            data: seasons
+        });
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({
+            status: 500,
+            message: 'Error retrieving tournaments',
+        })
+    }
+}
+
 const getSingleTournamentSeason = async (req: any, res: Response): Promise<any> => {
     try {
         return res.status(200).json({
@@ -223,19 +241,29 @@ const saveMatch = async (req: Request, res: Response): Promise<any> => {
 
 const getAllMatches = async (req: Request, res: Response): Promise<any> => {
     try {
-        const matches = await tournamentsRepositories.findAllMatches();
+        const { tournament, team, status, limit, skip } = req.query;
+
+        const matches = await tournamentsRepositories.findAllMatches({
+            tournament,
+            team,
+            status,
+            limit: limit ? parseInt(limit as string, 10) : undefined,
+            skip: skip ? parseInt(skip as string, 10) : undefined,
+        });
+
         return res.status(200).json({
             status: 200,
             message: "Matches retrieved successfully",
-            data: matches
-        })
+            data: matches,
+        });
     } catch (error: any) {
         return res.status(500).json({
             status: 500,
-            message: error.message || "Error retrieving matches"
-        })
+            message: error.message || "Error retrieving matches",
+        });
     }
-}
+};
+
 
 const getHomepageMatches = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -258,12 +286,19 @@ const getHomepageMatches = async (req: Request, res: Response): Promise<any> => 
 
 const getSingleMatch = async (req: any, res: Response): Promise<any> => {
     try {
+        const homeTeamPlayers = await tournamentsRepositories.findTeamCurrentPlayers(req.match.homeTeam)
+        const awayTeamPlayers = await tournamentsRepositories.findTeamCurrentPlayers(req.match.awayTeam)
+
         return res.status(200).json({
             status: 200,
             message: "Match retrieved successfully",
             data: {
                 match: req.match,
-                matchActivities: req.matchActivities
+                matchActivities: req.matchActivities,
+                players: {
+                    home: homeTeamPlayers,
+                    away: awayTeamPlayers
+                }
             }
         })
     } catch (error: any) {
@@ -366,6 +401,69 @@ const getSinglePlayer = async (req: any, res: Response): Promise<any> => {
     }
 }
 
+const saveMatchEvent = async (req: any, res: Response): Promise<any> => {
+    try {
+        const requiredFields = ["match", "team", "eventType", "minute", "description"];
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                return res.status(400).json({ status: 400, message: `${field} is required` });
+            }
+        }
+
+        const matchEvent = await tournamentsRepositories.saveMatchEvent(req.body);
+
+        const goalEvents = ["goal", "own_goal", "penalty_goal"];
+
+        if (goalEvents.includes(req.body.eventType)) {
+
+            if (req.match.homeTeam._id.toString() === req.body.team) {
+                await Match.findByIdAndUpdate(req.match._id, { $inc: { homeScore: 1 } });
+            } else if (req.match.awayTeam._id.toString() === req.body.team) {
+                await Match.findByIdAndUpdate(req.match._id, { $inc: { awayScore: 1 } });
+            } else {
+                throw new Error("Team not found");
+            }
+        }
+
+        if (req.body.eventType === "goal_cancelled") {
+            if (req.match.homeTeam._id.toString() === req.body.team) {
+                await Match.findByIdAndUpdate(req.match._id, { $inc: { homeScore: -1 } });
+            } else if (req.match.awayTeam._id.toString() === req.body.team) {
+                await Match.findByIdAndUpdate(req.match._id, { $inc: { awayScore: -1 } });
+            } else {
+                throw new Error("Team not found");
+            }
+        }
+
+        return res.status(201).json({
+            status: 201,
+            message: "Match event saved successfully",
+            data: matchEvent,
+        });
+    } catch (error: any) {
+        console.log(error)
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error saving match event",
+        });
+    }
+};
+
+const getTournamentSeasonMatches = async (req: any, res: Response): Promise<any> => {
+    try {
+        return res.status(200).json({
+            status: 200,
+            message: "Tournament season matches retrieved successfully",
+            data: { season: req.season, matches: req.matches }
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            status: 500,
+            message: error.message || "Error getting tournament season matches",
+        })
+    }
+}
+
 export default {
     saveCountry,
     getAllCountries,
@@ -377,6 +475,7 @@ export default {
     getAllTournaments,
     saveTournamentSeason,
     getAllTournamentsSeasons,
+    getLatestSeasons,
     getSingleTournamentSeason,
     saveMatch,
     getAllMatches,
@@ -386,5 +485,7 @@ export default {
     savePlayer,
     getAllPlayers,
     saveTeamPlayer,
-    getSinglePlayer
+    getSinglePlayer,
+    saveMatchEvent,
+    getTournamentSeasonMatches
 }
