@@ -167,7 +167,7 @@ export const getUserProfile = async (req: any, res: Response): Promise<any> => {
 export const updateUserProfile = async (req: any, res: Response): Promise<any> => {
     try {
         const userId = req.user._id
-        console.log(req.body)
+
         const updatedProfile = await authRepositories.updateUser(userId, req.body);
         return res.status(200).json({
             status: 200,

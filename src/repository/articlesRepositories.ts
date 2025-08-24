@@ -681,6 +681,7 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
     const categoriesWithWeeklyTop: CategoryArticles = {};
 
     for (const category of categories) {
+
         const weeklyTop = await ArticleView.aggregate([
             {
                 $match: {
@@ -696,7 +697,12 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
                 },
             },
             { $unwind: "$article" },
-            { $match: { "article.category": category } },
+            {
+                $match: {
+                    "article.category": category,
+                    "article.status": "published"
+                }
+            },
             {
                 $group: {
                     _id: "$article._id",
@@ -711,6 +717,7 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
 
         const otherArticles = await Article.find({
             category,
+            status: "published",
             _id: { $nin: weeklyTop.map(a => a._id) }
         })
             .sort({ createdAt: -1 })
@@ -739,6 +746,7 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
 
     return categoriesWithWeeklyTop;
 };
+
 
 
 const searchArticles = async ({
@@ -816,7 +824,6 @@ const findUsersLatestArticlesCustomized = async (limit: number) => {
 };
 
 
-
 export default {
     findAllArticles,
     findPublishedArticles,
@@ -844,5 +851,5 @@ export default {
     findTopFeaturedArticles,
     findArticlesByCategoryWithWeeklyTop,
     searchArticles,
-    findUsersLatestArticlesCustomized
+    findUsersLatestArticlesCustomized,
 }
