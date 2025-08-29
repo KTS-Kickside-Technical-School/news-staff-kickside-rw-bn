@@ -9,6 +9,10 @@ const articleSchema = new Schema({
         type: String,
         required: true
     },
+    language:{
+        type: String,
+        required: true
+    },
     coverImage: {
         type: String,
         required: true
