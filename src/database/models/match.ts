@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface IMatch {
+    slug: string;
     homeTeam: mongoose.Schema.Types.ObjectId;
     awayTeam: mongoose.Schema.Types.ObjectId;
     homeScore: number;
@@ -12,6 +13,7 @@ export interface IMatch {
 }
 
 const matchSchema = new Schema({
+    slug: { type: String, required: true, unique: true },
     tournamentSeason: { type: mongoose.Schema.Types.ObjectId, ref: 'TournamentPerYear' },
     homeTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },
     awayTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' },

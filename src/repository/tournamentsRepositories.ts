@@ -24,6 +24,11 @@ const getAllCountries = async () => {
 const getTeamByName = async (name: string) => {
     return Team.findOne({ name });
 }
+
+const getTeamById = async (_id: any) => {
+    return Team.findById({ _id });
+}
+
 const createTeam = async (data: ITeam) => {
     const team = await Team.create(data);
     return await Team.findById(team._id)
@@ -263,7 +268,7 @@ const findLatestTournamentsSeasons = async () => {
         {
             $sort: {
                 statusOrder: 1,
-                "year.name": -1, // ✅ still sort by latest year name if multiple
+                "year.name": -1,
                 "tournament.name": 1,
                 "teams.name": 1,
             },
@@ -274,15 +279,15 @@ const findLatestTournamentsSeasons = async () => {
 
 
 const findTournamentSeasonById = async (id: string) => {
-    return TournamentPerYear.findOne({ _id: id });
+    return await TournamentPerYear.findOne({ _id: id }).populate("year");
 }
 
 const findMatchBy4Attributes = async (attr1: string, value1: string, attr2: string, value2: string, attr3: string, value3: string, attr4: string, value4: string) => {
-    return Match.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 });
+    return await Match.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 })
 }
 
 const saveMatch = async (data: IMatch) => {
-    return Match.create(data);
+    return await Match.create(data);
 }
 
 const findAllMatches = async (filters: any) => {
@@ -316,6 +321,7 @@ const findAllMatches = async (filters: any) => {
                     $switch: {
                         branches: [
                             { case: { $eq: ["$status", "in_progress"] }, then: 1 },
+                            { case: { $eq: ["$status", "postponed"] }, then: 3 },
                             { case: { $eq: ["$status", "scheduled"] }, then: 2 },
                             { case: { $eq: ["$status", "finished"] }, then: 3 },
                         ],
@@ -688,6 +694,7 @@ export default {
     getCountryByName,
     getAllCountries,
     getTeamByName,
+    getTeamById,
     createTeam,
     getAllTeams,
     getYearBy2Attributes,
