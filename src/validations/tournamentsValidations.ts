@@ -68,4 +68,5 @@ export const newTeamPlayerSchema = Joi.object({
     startDate: Joi.date().required(),
     endDate: Joi.date().required(),
     stillPlaying: Joi.boolean().required(),
+    jerseyNumber: Joi.number().required(),
 })

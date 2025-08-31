@@ -26,7 +26,7 @@ const getTeamByName = async (name: string) => {
 }
 
 const getTeamById = async (_id: any) => {
-    return Team.findById({ _id });
+    return Team.findById(_id);
 }
 
 const createTeam = async (data: ITeam) => {
@@ -621,8 +621,33 @@ const findMatchById = async (_id) => {
     return match;
 };
 
-const findMatchActivities = async (matchId: string) => {
+const findMatchBySlug = async (slug) => {
+    const match = await Match.findOne({ slug })
+        .populate({
+            path: 'homeTeam',
+        })
+        .populate({
+            path: 'awayTeam',
+        })
+        .populate({
+            path: 'tournamentSeason',
+            populate: [{
+                path: 'tournament',
+            }, {
+                path: 'teams',
+            }, { path: "year" }]
+        })
+        .exec();
+
+    return match;
+};
+
+const findMatchActivities = async (matchId: any) => {
     return await MatchActivities.find({ match: matchId }).sort({ minute: -1 })
+        .populate('player')
+        .populate('relatedPlayer')
+        .populate('match')
+        .populate('team')
 }
 
 const updateMatch = async (_id: any, data: any) => {
@@ -695,6 +720,7 @@ export default {
     getAllCountries,
     getTeamByName,
     getTeamById,
+    findMatchBySlug,
     createTeam,
     getAllTeams,
     getYearBy2Attributes,

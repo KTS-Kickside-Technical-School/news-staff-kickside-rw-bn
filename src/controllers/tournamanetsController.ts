@@ -382,13 +382,9 @@ const getAllPlayers = async (req: Request, res: Response): Promise<any> => {
 
 const saveTeamPlayer = async (req: Request, res: Response): Promise<any> => {
     try {
-        console.log(req.body)
         if (req.body.stillPlaying === true) {
             const a = await tournamentsRepositories.updatePlayerInTheTeamLastPlayings(req.body.player);
-
-            console.log(a)
         }
-
 
         const teamPlayer = await tournamentsRepositories.saveTeamPlayer(req.body);
 
