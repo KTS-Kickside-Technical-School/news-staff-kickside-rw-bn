@@ -8,6 +8,7 @@ export interface ITournamentPerYear {
     startDate: string;
     endDate: string;
     status: string;
+    isLatest: boolean;
     slug: string;
 }
 
@@ -38,6 +39,11 @@ const tournamentPerYearSchema = new mongoose.Schema<ITournamentPerYear>(
         },
         endDate: {
             type: String,
+            required: true,
+        },
+        isLatest: {
+            type: Boolean,
+            default: false,
             required: true,
         },
         status: {

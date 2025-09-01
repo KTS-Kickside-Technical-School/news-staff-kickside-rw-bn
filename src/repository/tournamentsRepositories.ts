@@ -56,6 +56,10 @@ const setYearsUnLatest = async () => {
     return await Year.updateMany({}, { $set: { isLatest: false } });
 }
 
+const setSeasonsUnLatestByTournament = async (tournament: string) => {
+    return await TournamentPerYear.updateMany({ tournament }, { $set: { isLatest: false } });
+}
+
 const getTournamentByAttribute = async (attr: string, value: string) => {
     return await Tournament.findOne({ [attr]: value });
 }
@@ -149,7 +153,8 @@ const findAllTournamentsSeasons = async () => {
                 startDate: { $first: '$startDate' },
                 endDate: { $first: '$endDate' },
                 status: { $first: '$status' },
-                teams: { $push: '$teams' }
+                teams: { $push: '$teams' },
+                isLatest: { $first: '$isLatest' }
             }
         },
 
@@ -182,6 +187,11 @@ const findAllTournamentsSeasons = async () => {
 const findLatestTournamentsSeasons = async () => {
     return await TournamentPerYear.aggregate([
         {
+            $match: {
+                isLatest: true, // ✅ directly match TournamentPerYear docs marked latest
+            },
+        },
+        {
             $lookup: {
                 from: "tournaments",
                 localField: "tournament",
@@ -202,12 +212,6 @@ const findLatestTournamentsSeasons = async () => {
         { $unwind: "$year" },
 
         {
-            $match: {
-                "year.isLatest": true,
-            },
-        },
-
-        {
             $lookup: {
                 from: "teams",
                 localField: "teams",
@@ -215,7 +219,6 @@ const findLatestTournamentsSeasons = async () => {
                 as: "teams",
             },
         },
-
         {
             $unwind: {
                 path: "$teams",
@@ -249,7 +252,6 @@ const findLatestTournamentsSeasons = async () => {
                 teams: { $push: "$teams" },
             },
         },
-
         {
             $addFields: {
                 statusOrder: {
@@ -264,7 +266,6 @@ const findLatestTournamentsSeasons = async () => {
                 },
             },
         },
-
         {
             $sort: {
                 statusOrder: 1,
@@ -751,5 +752,6 @@ export default {
     findTeamCurrentPlayers,
     saveMatchEvent,
     findLatestTournamentsSeasons,
-    findSeasonBySlug
+    findSeasonBySlug,
+    setSeasonsUnLatestByTournament
 }

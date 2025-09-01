@@ -107,7 +107,7 @@ const saveYear = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournament = async (req: Request, res: Response): Promise<any> => {
     try {
-
+        console.log(req.body)
         const tournament = await tournamentsRepositories.createTournament(req.body);
         return res.status(201).json({
             status: 201,
@@ -158,6 +158,10 @@ const getAllTournaments = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournamentSeason = async (req: Request, res: Response): Promise<any> => {
     try {
+        const { isLatest, tournament } = req.body
+        if (isLatest) {
+            await tournamentsRepositories.setSeasonsUnLatestByTournament(tournament);
+        }
         const season = await tournamentsRepositories.saveTournamentSeason(req.body);
         return res.status(201).json({
             status: 201,
