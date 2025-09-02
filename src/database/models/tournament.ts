@@ -6,6 +6,7 @@ export interface ITournament {
     foundedYear?: string;
     country?: Schema.Types.ObjectId;
     type: Schema.Types.ObjectId;
+    logo: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -27,8 +28,12 @@ const tournamentSchema = new Schema<ITournament>({
         type: Schema.Types.ObjectId,
         ref: "Country",
         required: false,
-    }
-    , type: {
+    },
+    type: {
+        type: String,
+        required: false,
+    },
+    logo: {
         type: String,
         required: false,
     }

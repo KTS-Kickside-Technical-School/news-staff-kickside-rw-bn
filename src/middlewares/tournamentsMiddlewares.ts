@@ -135,6 +135,28 @@ export const isMatchExists = async (req: any, res: Response, next: NextFunction)
         return res.status(500).json({ status: 500, message: "Internal server error" });
     }
 }
+export const isMatchExistsBySlug = async (req: any, res: Response, next: NextFunction): Promise<any> => {
+    try {
+        const slug = req.params.slug
+        const match = await tournamentsRepositories.findMatchBySlug(slug);
+        if (!match) {
+            return res.status(404).json({
+                status: 404,
+                message: "Match not found"
+            });
+        }
+
+        const matchActivities = await tournamentsRepositories.findMatchActivities(match._id || "");
+
+
+        req.match = match
+        req.matchActivities = matchActivities
+
+        return next()
+    } catch (error) {
+        return res.status(500).json({ status: 500, message: "Internal server error" });
+    }
+}
 
 export const isPlayerArleadyInTheTeam = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {

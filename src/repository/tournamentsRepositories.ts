@@ -24,6 +24,11 @@ const getAllCountries = async () => {
 const getTeamByName = async (name: string) => {
     return Team.findOne({ name });
 }
+
+const getTeamById = async (_id: any) => {
+    return Team.findById(_id);
+}
+
 const createTeam = async (data: ITeam) => {
     const team = await Team.create(data);
     return await Team.findById(team._id)
@@ -49,6 +54,10 @@ const createYear = async (data: IYears) => {
 
 const setYearsUnLatest = async () => {
     return await Year.updateMany({}, { $set: { isLatest: false } });
+}
+
+const setSeasonsUnLatestByTournament = async (tournament: string) => {
+    return await TournamentPerYear.updateMany({ tournament }, { $set: { isLatest: false } });
 }
 
 const getTournamentByAttribute = async (attr: string, value: string) => {
@@ -144,7 +153,8 @@ const findAllTournamentsSeasons = async () => {
                 startDate: { $first: '$startDate' },
                 endDate: { $first: '$endDate' },
                 status: { $first: '$status' },
-                teams: { $push: '$teams' }
+                teams: { $push: '$teams' },
+                isLatest: { $first: '$isLatest' }
             }
         },
 
@@ -177,6 +187,11 @@ const findAllTournamentsSeasons = async () => {
 const findLatestTournamentsSeasons = async () => {
     return await TournamentPerYear.aggregate([
         {
+            $match: {
+                isLatest: true, // ✅ directly match TournamentPerYear docs marked latest
+            },
+        },
+        {
             $lookup: {
                 from: "tournaments",
                 localField: "tournament",
@@ -197,12 +212,6 @@ const findLatestTournamentsSeasons = async () => {
         { $unwind: "$year" },
 
         {
-            $match: {
-                "year.isLatest": true,
-            },
-        },
-
-        {
             $lookup: {
                 from: "teams",
                 localField: "teams",
@@ -210,7 +219,6 @@ const findLatestTournamentsSeasons = async () => {
                 as: "teams",
             },
         },
-
         {
             $unwind: {
                 path: "$teams",
@@ -244,7 +252,6 @@ const findLatestTournamentsSeasons = async () => {
                 teams: { $push: "$teams" },
             },
         },
-
         {
             $addFields: {
                 statusOrder: {
@@ -259,11 +266,10 @@ const findLatestTournamentsSeasons = async () => {
                 },
             },
         },
-
         {
             $sort: {
                 statusOrder: 1,
-                "year.name": -1, // ✅ still sort by latest year name if multiple
+                "year.name": -1,
                 "tournament.name": 1,
                 "teams.name": 1,
             },
@@ -274,15 +280,15 @@ const findLatestTournamentsSeasons = async () => {
 
 
 const findTournamentSeasonById = async (id: string) => {
-    return TournamentPerYear.findOne({ _id: id });
+    return await TournamentPerYear.findOne({ _id: id }).populate("year");
 }
 
 const findMatchBy4Attributes = async (attr1: string, value1: string, attr2: string, value2: string, attr3: string, value3: string, attr4: string, value4: string) => {
-    return Match.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 });
+    return await Match.findOne({ [attr1]: value1, [attr2]: value2, [attr3]: value3, [attr4]: value4 })
 }
 
 const saveMatch = async (data: IMatch) => {
-    return Match.create(data);
+    return await Match.create(data);
 }
 
 const findAllMatches = async (filters: any) => {
@@ -316,6 +322,7 @@ const findAllMatches = async (filters: any) => {
                     $switch: {
                         branches: [
                             { case: { $eq: ["$status", "in_progress"] }, then: 1 },
+                            { case: { $eq: ["$status", "postponed"] }, then: 3 },
                             { case: { $eq: ["$status", "scheduled"] }, then: 2 },
                             { case: { $eq: ["$status", "finished"] }, then: 3 },
                         ],
@@ -615,8 +622,33 @@ const findMatchById = async (_id) => {
     return match;
 };
 
-const findMatchActivities = async (matchId: string) => {
+const findMatchBySlug = async (slug) => {
+    const match = await Match.findOne({ slug })
+        .populate({
+            path: 'homeTeam',
+        })
+        .populate({
+            path: 'awayTeam',
+        })
+        .populate({
+            path: 'tournamentSeason',
+            populate: [{
+                path: 'tournament',
+            }, {
+                path: 'teams',
+            }, { path: "year" }]
+        })
+        .exec();
+
+    return match;
+};
+
+const findMatchActivities = async (matchId: any) => {
     return await MatchActivities.find({ match: matchId }).sort({ minute: -1 })
+        .populate('player')
+        .populate('relatedPlayer')
+        .populate('match')
+        .populate('team')
 }
 
 const updateMatch = async (_id: any, data: any) => {
@@ -688,6 +720,8 @@ export default {
     getCountryByName,
     getAllCountries,
     getTeamByName,
+    getTeamById,
+    findMatchBySlug,
     createTeam,
     getAllTeams,
     getYearBy2Attributes,
@@ -718,5 +752,6 @@ export default {
     findTeamCurrentPlayers,
     saveMatchEvent,
     findLatestTournamentsSeasons,
-    findSeasonBySlug
+    findSeasonBySlug,
+    setSeasonsUnLatestByTournament
 }

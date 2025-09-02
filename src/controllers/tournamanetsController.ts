@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import tournamentsRepositories from '../repository/tournamentsRepositories';
 import mongoose from 'mongoose';
 import Match from '../database/models/match';
+import TeamPlayer from '../database/models/teamPlayer';
 
 const saveCountry = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -106,7 +107,7 @@ const saveYear = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournament = async (req: Request, res: Response): Promise<any> => {
     try {
-
+        console.log(req.body)
         const tournament = await tournamentsRepositories.createTournament(req.body);
         return res.status(201).json({
             status: 201,
@@ -157,6 +158,10 @@ const getAllTournaments = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournamentSeason = async (req: Request, res: Response): Promise<any> => {
     try {
+        const { isLatest, tournament } = req.body
+        if (isLatest) {
+            await tournamentsRepositories.setSeasonsUnLatestByTournament(tournament);
+        }
         const season = await tournamentsRepositories.saveTournamentSeason(req.body);
         return res.status(201).json({
             status: 201,
@@ -222,8 +227,29 @@ const getSingleTournamentSeason = async (req: any, res: Response): Promise<any> 
     }
 }
 
+const getTeamAVSTeamB = async (teamA: any, teamB: any) => {
+    const home = await tournamentsRepositories.getTeamById(teamA);
+    const away = await tournamentsRepositories.getTeamById(teamB);
+
+    const toPascalCase = (str: string) => {
+        return str.replace(/\w+/g, (word) =>
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).replace(/\s+/g, '');
+    };
+
+    const homeName = toPascalCase(home.name);
+    const awayName = toPascalCase(away.name);
+
+    return `${homeName}Vs${awayName}`;
+};
+
 const saveMatch = async (req: Request, res: Response): Promise<any> => {
     try {
+        const vs = await getTeamAVSTeamB(req.body.homeTeam, req.body.awayTeam)
+        const season: any = await tournamentsRepositories.findTournamentSeasonById(req.body.tournamentSeason)
+
+        req.body.slug = `${season?.year?.name}-${season.name}-${vs}`
+
         const match = await tournamentsRepositories.saveMatch(req.body);
         return res.status(201).json({
             status: 201,
@@ -360,13 +386,9 @@ const getAllPlayers = async (req: Request, res: Response): Promise<any> => {
 
 const saveTeamPlayer = async (req: Request, res: Response): Promise<any> => {
     try {
-        console.log(req.body)
         if (req.body.stillPlaying === true) {
             const a = await tournamentsRepositories.updatePlayerInTheTeamLastPlayings(req.body.player);
-
-            console.log(a)
         }
-
 
         const teamPlayer = await tournamentsRepositories.saveTeamPlayer(req.body);
 

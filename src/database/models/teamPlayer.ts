@@ -6,6 +6,7 @@ export interface iTeamPlayer {
     startDate: Date;
     endDate: Date;
     stillPlaying: boolean;
+    jerseyNumber: number;
 }
 
 const TeamPlayerSchema = new mongoose.Schema<iTeamPlayer>({
@@ -26,6 +27,10 @@ const TeamPlayerSchema = new mongoose.Schema<iTeamPlayer>({
     endDate: {
         type: Date,
         required: false,
+    },
+    jerseyNumber: {
+        type: Number,
+        required: true,
     },
     stillPlaying: {
         type: Boolean,

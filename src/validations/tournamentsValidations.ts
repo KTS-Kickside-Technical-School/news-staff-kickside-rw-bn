@@ -24,6 +24,7 @@ export const newTournamentSchema = Joi.object({
     description: Joi.string().required(),
     foundedYear: Joi.string().required(),
     type: Joi.string().required(),
+    logo: Joi.string().required(),
 })
 
 export const newTournamentSeasonSchema = Joi.object({
@@ -33,7 +34,8 @@ export const newTournamentSeasonSchema = Joi.object({
     teams: Joi.array().items(Joi.string()).required(),
     startDate: Joi.string().required(),
     endDate: Joi.string().required(),
-    status: Joi.string().required()
+    status: Joi.string().required(),
+    isLatest: Joi.boolean()
 })
 
 export const newMatchSchema = Joi.object({
@@ -68,4 +70,5 @@ export const newTeamPlayerSchema = Joi.object({
     startDate: Joi.date().required(),
     endDate: Joi.date().required(),
     stillPlaying: Joi.boolean().required(),
+    jerseyNumber: Joi.number().required(),
 })
