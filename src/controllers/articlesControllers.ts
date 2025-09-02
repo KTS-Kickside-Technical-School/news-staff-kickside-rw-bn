@@ -241,8 +241,9 @@ const deleteArticle = async (req: any, res: Response, next: NextFunction): Promi
 
 const getArticlesByCategory = async (req: any, res: Response): Promise<any> => {
     try {
-        const { category } = req.params
-        const articles = await articlesRepositories.findArticlesByCategory(category)
+        const { category } = req.params;
+        const { language } = req.query;
+        const articles = await articlesRepositories.findArticlesByCategory(category, language)
         return res.status(200).json({
             status: 200,
             messsage: `Articles in the "${category}" category `,
@@ -314,7 +315,8 @@ const getAuthorProfile = async (req: any, res: Response): Promise<any> => {
 
 const getPopularArticles = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findPopularArticles();
+        const { language } = req.query
+        const articles = await articlesRepositories.findPopularArticles(language);
         return res.status(200).json({
             status: 200,
             message: "Popular Articles Fetched Successfully",
@@ -368,9 +370,12 @@ export const adminFetchJournalistAnalytics = async (req, res) => {
     }
 };
 
-const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any> => {
+const getTopFeaturedArticles = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findTopFeaturedArticles();
+        const language = req.query.language
+
+        const articles = await articlesRepositories.findTopFeaturedArticles(language);
+
         return res.status(200).json({
             status: 200,
             message: "Top featured articles fetched successfully",
@@ -384,9 +389,10 @@ const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any>
     }
 }
 
-const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Promise<any> => {
+const getTOpWeeklyArticlesByCategories = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findArticlesByCategoryWithWeeklyTop();
+        const language = req.query.language
+        const articles = await articlesRepositories.findArticlesByCategoryWithWeeklyTop(language);
         return res.status(200).json({
             status: 200,
             message: "Top weekly articles by categories fetched successfully",
@@ -395,6 +401,7 @@ const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Pr
 
     }
     catch (error: any) {
+        console.error(error)
         return res.status(500).json({
             status: 500,
             message: error.message
