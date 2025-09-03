@@ -188,7 +188,7 @@ const findLatestTournamentsSeasons = async () => {
     return await TournamentPerYear.aggregate([
         {
             $match: {
-                isLatest: true, // ✅ directly match TournamentPerYear docs marked latest
+                isLatest: true,
             },
         },
         {
@@ -449,10 +449,21 @@ const findHomepageMatches = async () => {
             }
         },
         { $unwind: "$tournamentSeason" },
+        // NEW: Lookup the main tournament document
+        {
+            $lookup: {
+                from: "tournaments",
+                localField: "tournamentSeason.tournament",
+                foreignField: "_id",
+                as: "tournament"
+            }
+        },
+        { $unwind: "$tournament" },
         {
             $group: {
                 _id: "$tournamentSeason.name",
-                tournament: { $first: "$tournamentSeason" },
+                tournamentSeason: { $first: "$tournamentSeason" },
+                tournament: { $first: "$tournament" }, // Add main tournament to group
                 matches: {
                     $push: {
                         _id: "$_id",
@@ -461,9 +472,10 @@ const findHomepageMatches = async () => {
                         homeScore: "$homeScore",
                         awayScore: "$awayScore",
                         status: "$status",
-                        matchTime: "$matchTime", // keep original string
-                        matchTimeDate: "$matchTimeDate", // new parsed date
-                        statusOrder: "$statusOrder"
+                        matchTime: "$matchTime",
+                        matchTimeDate: "$matchTimeDate",
+                        statusOrder: "$statusOrder",
+                        tournament: "$tournament" // Include tournament in each match
                     }
                 }
             }
@@ -472,7 +484,8 @@ const findHomepageMatches = async () => {
             $project: {
                 _id: 0,
                 tournamentName: "$_id",
-                tournament: 1,
+                tournamentSeason: 1,
+                tournament: 1, // Include main tournament
                 matches: 1
             }
         },
@@ -494,7 +507,7 @@ const findHomepageMatches = async () => {
         }
     ]);
 
-    // Step 2: Fallback → last 3 days finished/postponed
+    // Step 2: Fallback → last 3 days finished/postponed (with same updates)
     if (!matches.length) {
         matches = await Match.aggregate([
             {
@@ -552,10 +565,21 @@ const findHomepageMatches = async () => {
                 }
             },
             { $unwind: "$tournamentSeason" },
+            // NEW: Lookup the main tournament document
+            {
+                $lookup: {
+                    from: "tournaments",
+                    localField: "tournamentSeason.tournament",
+                    foreignField: "_id",
+                    as: "tournament"
+                }
+            },
+            { $unwind: "$tournament" },
             {
                 $group: {
                     _id: "$tournamentSeason.name",
-                    tournament: { $first: "$tournamentSeason" },
+                    tournamentSeason: { $first: "$tournamentSeason" },
+                    tournament: { $first: "$tournament" }, // Add main tournament to group
                     matches: {
                         $push: {
                             _id: "$_id",
@@ -566,7 +590,8 @@ const findHomepageMatches = async () => {
                             status: "$status",
                             matchTime: "$matchTime",
                             matchTimeDate: "$matchTimeDate",
-                            statusOrder: "$statusOrder"
+                            statusOrder: "$statusOrder",
+                            tournament: "$tournament" // Include tournament in each match
                         }
                     }
                 }
@@ -575,7 +600,8 @@ const findHomepageMatches = async () => {
                 $project: {
                     _id: 0,
                     tournamentName: "$_id",
-                    tournament: 1,
+                    tournamentSeason: 1,
+                    tournament: 1, // Include main tournament
                     matches: 1
                 }
             },

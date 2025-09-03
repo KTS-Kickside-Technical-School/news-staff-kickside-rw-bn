@@ -401,12 +401,13 @@ const getTOpWeeklyArticlesByCategories = async (req: any, res: Response): Promis
 
 const userSearchArticles = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { query = '', page = 1, limit = 35 } = req.query;
+        const { query = '', page = 1, limit = 35, language } = req.query;
 
         const data = await articlesRepositories.searchArticles({
             query: String(query),
             page: Number(page),
             limit: Number(limit),
+            language: language
         });
 
         return res.status(200).json({ status: 200, ...data });

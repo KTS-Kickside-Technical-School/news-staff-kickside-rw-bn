@@ -748,11 +748,8 @@ const searchArticles = async ({
     query = '',
     page = 1,
     limit = 35,
-}: {
-    query?: string;
-    page?: number;
-    limit?: number;
-}) => {
+    language
+}: any) => {
     const minResults = 15;
 
     const q = query.trim();
@@ -770,6 +767,7 @@ const searchArticles = async ({
 
     let results = await Article.find({
         status: 'published',
+        language: language,
         $or: buildConditions(q),
     })
         .populate('author')
