@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import slugify from 'slugify';
 import articlesRepositories from "../repository/articlesRepositories"
 import authRepositories from "../repository/authRepositories";
+import { generateSlug } from "../helpers/articleHelpers";
 
 const getPublishedArticles = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -82,19 +83,7 @@ const createNewArticle = async (req: any, res: Response): Promise<any> => {
     }
 }
 
-const generateSlug = (title: string) => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const time = Date.now();
 
-    const baseSlug = slugify(title, {
-        lower: true,
-        strict: true,
-    });
-
-    return `${year}-${month}-${baseSlug}-${time}`;
-};
 
 const requestArticleEditAccess = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
@@ -241,8 +230,9 @@ const deleteArticle = async (req: any, res: Response, next: NextFunction): Promi
 
 const getArticlesByCategory = async (req: any, res: Response): Promise<any> => {
     try {
-        const { category } = req.params
-        const articles = await articlesRepositories.findArticlesByCategory(category)
+        const { category } = req.params;
+        const { language } = req.query;
+        const articles = await articlesRepositories.findArticlesByCategory(category, language)
         return res.status(200).json({
             status: 200,
             messsage: `Articles in the "${category}" category `,
@@ -288,10 +278,11 @@ const journalistAnalytics = async (req: any, res: Response): Promise<any> => {
 const getAuthorProfile = async (req: any, res: Response): Promise<any> => {
     try {
         const { username } = req.params;
+        const { language } = req.query
         const user = await authRepositories.findUserByUsernames(username);
         const plainUser = user.toJSON()
         delete plainUser.password;
-        const articles = await authRepositories.findArticlesByAuthor(user._id);
+        const articles = await authRepositories.findArticlesByAuthor(user._id, language);
         const relatedJournalists = await authRepositories.findRelatedJournalists(user._id);
 
         return res.status(200).json({
@@ -314,7 +305,8 @@ const getAuthorProfile = async (req: any, res: Response): Promise<any> => {
 
 const getPopularArticles = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findPopularArticles();
+        const { language } = req.query
+        const articles = await articlesRepositories.findPopularArticles(language);
         return res.status(200).json({
             status: 200,
             message: "Popular Articles Fetched Successfully",
@@ -368,9 +360,12 @@ export const adminFetchJournalistAnalytics = async (req, res) => {
     }
 };
 
-const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any> => {
+const getTopFeaturedArticles = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findTopFeaturedArticles();
+        const language = req.query.language
+
+        const articles = await articlesRepositories.findTopFeaturedArticles(language);
+
         return res.status(200).json({
             status: 200,
             message: "Top featured articles fetched successfully",
@@ -384,9 +379,10 @@ const getTopFeaturedArticles = async (req: Request, res: Response): Promise<any>
     }
 }
 
-const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Promise<any> => {
+const getTOpWeeklyArticlesByCategories = async (req: any, res: Response): Promise<any> => {
     try {
-        const articles = await articlesRepositories.findArticlesByCategoryWithWeeklyTop();
+        const language = req.query.language
+        const articles = await articlesRepositories.findArticlesByCategoryWithWeeklyTop(language);
         return res.status(200).json({
             status: 200,
             message: "Top weekly articles by categories fetched successfully",
@@ -395,6 +391,7 @@ const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Pr
 
     }
     catch (error: any) {
+        console.error(error)
         return res.status(500).json({
             status: 500,
             message: error.message
@@ -404,12 +401,13 @@ const getTOpWeeklyArticlesByCategories = async (req: Request, res: Response): Pr
 
 const userSearchArticles = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { query = '', page = 1, limit = 35 } = req.query;
+        const { query = '', page = 1, limit = 35, language } = req.query;
 
         const data = await articlesRepositories.searchArticles({
             query: String(query),
             page: Number(page),
             limit: Number(limit),
+            language: language
         });
 
         return res.status(200).json({ status: 200, ...data });

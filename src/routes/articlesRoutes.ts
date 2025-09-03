@@ -49,7 +49,6 @@ articlesRoute.get("/get-top-weekly-categories", articlesControllers.getTOpWeekly
 
 articlesRoute.get("/user-search", articlesControllers.userSearchArticles);
 
-
 articlesRoute.get("/get-latest-articles-customized", articlesControllers.getTheLatestArticlesCustomized);
 
 export default articlesRoute;

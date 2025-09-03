@@ -78,10 +78,11 @@ const saveArticleViewsRecord = async (data: any) => {
     return await ArticleView.create(data)
 };
 
-const findArticlesByCategory = async (category: string) => {
+const findArticlesByCategory = async (category: string, language: any) => {
     return Article.find({
         category: category,
         status: "published",
+        language: language,
     }).populate("author").sort({ createdAt: -1 })
 };
 
@@ -266,7 +267,7 @@ const findArticlesTotalViews = async (articles: any[]) => {
 const findArticleViewsByArticleId = async (articleId: number) => {
     return await ArticleView.find({ article: articleId })
 }
-const findPopularArticles = async () => {
+const findPopularArticles = async (language: any) => {
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
@@ -298,7 +299,8 @@ const findPopularArticles = async () => {
         {
             $match: {
                 'article.status': 'published',
-                'article.isDeleted': false
+                'article.isDeleted': false,
+                'article.language': language
             }
         },
         {
@@ -586,13 +588,11 @@ export const adminGetJournalistAnalytics = async (userId) => {
 };
 
 
-const findTopFeaturedArticles = async () => {
+const findTopFeaturedArticles = async (language: any) => {
     const now = new Date();
 
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const deduplicateArticles = (articles: any[]) => {
         const unique = new Map();
@@ -610,7 +610,10 @@ const findTopFeaturedArticles = async () => {
         }) as typeof articles;
     };
 
-    const latestArticles = await Article.find({ status: "published" })
+    const latestArticles = await Article.find({
+        status: "published",
+        ...(language ? { language } : {})
+    })
         .sort({ createdAt: -1 })
         .limit(6)
         .lean();
@@ -619,7 +622,7 @@ const findTopFeaturedArticles = async () => {
         { $match: { createdAt: { $gte: startOfWeek } } },
         { $group: { _id: "$article", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 3 },
+        { $limit: 4 },
         {
             $lookup: {
                 from: "articles",
@@ -629,30 +632,15 @@ const findTopFeaturedArticles = async () => {
             },
         },
         { $unwind: "$article" },
+        { $match: { "article.status": "published", ...(language ? { "article.language": language } : {}) } },
         { $replaceRoot: { newRoot: "$article" } },
     ]);
 
-    const monthlyTopArticle = await ArticleView.aggregate([
-        { $match: { createdAt: { $gte: startOfMonth } } },
-        { $group: { _id: "$article", count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 1 },
-        {
-            $lookup: {
-                from: "articles",
-                localField: "_id",
-                foreignField: "_id",
-                as: "article",
-            },
-        },
-        { $unwind: "$article" },
-        { $replaceRoot: { newRoot: "$article" } },
-    ]);
+
 
     let combined = deduplicateArticles([
         ...latestArticles.slice(0, 2),
         ...weeklyTopArticles,
-        ...monthlyTopArticle,
     ]);
 
     if (combined.length < 6) {
@@ -672,16 +660,23 @@ const findTopFeaturedArticles = async () => {
     return populatedArticles.slice(0, 6);
 };
 
-
-const findArticlesByCategoryWithWeeklyTop = async () => {
+const findArticlesByCategoryWithWeeklyTop = async (language: any) => {
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
 
     const categoriesWithWeeklyTop: CategoryArticles = {};
 
-    for (const category of categories) {
+    const distinctCategories = await Article.distinct("category", {
+        status: "published",
+        language: language
+    });
 
+    if (distinctCategories.length === 0) {
+        return {};
+    }
+
+    for (const category of distinctCategories) {
         const weeklyTop = await ArticleView.aggregate([
             {
                 $match: {
@@ -700,7 +695,8 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
             {
                 $match: {
                     "article.category": category,
-                    "article.status": "published"
+                    "article.status": "published",
+                    "article.language": language
                 }
             },
             {
@@ -716,8 +712,9 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
         ]);
 
         const otherArticles = await Article.find({
-            category,
+            category: category,
             status: "published",
+            language: language,
             _id: { $nin: weeklyTop.map(a => a._id) }
         })
             .sort({ createdAt: -1 })
@@ -747,17 +744,12 @@ const findArticlesByCategoryWithWeeklyTop = async () => {
     return categoriesWithWeeklyTop;
 };
 
-
-
 const searchArticles = async ({
     query = '',
     page = 1,
     limit = 35,
-}: {
-    query?: string;
-    page?: number;
-    limit?: number;
-}) => {
+    language
+}: any) => {
     const minResults = 15;
 
     const q = query.trim();
@@ -775,6 +767,7 @@ const searchArticles = async ({
 
     let results = await Article.find({
         status: 'published',
+        language: language,
         $or: buildConditions(q),
     })
         .populate('author')

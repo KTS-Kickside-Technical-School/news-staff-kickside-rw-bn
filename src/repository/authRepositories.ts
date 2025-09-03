@@ -34,8 +34,8 @@ const findUserByUsernames = async (username) => {
         });
 };
 
-const findArticlesByAuthor = async (authorId) => {
-    return await Article.find({ author: authorId, status: "published" })
+const findArticlesByAuthor = async (authorId, language) => {
+    return await Article.find({ author: authorId, status: "published", language })
         .sort({ createdAt: -1 });
 };
 
