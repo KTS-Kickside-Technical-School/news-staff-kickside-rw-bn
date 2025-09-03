@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import slugify from 'slugify';
 import articlesRepositories from "../repository/articlesRepositories"
 import authRepositories from "../repository/authRepositories";
+import { generateSlug } from "../helpers/articleHelpers";
 
 const getPublishedArticles = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -82,19 +83,7 @@ const createNewArticle = async (req: any, res: Response): Promise<any> => {
     }
 }
 
-const generateSlug = (title: string) => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const time = Date.now();
 
-    const baseSlug = slugify(title, {
-        lower: true,
-        strict: true,
-    });
-
-    return `${year}-${month}-${baseSlug}-${time}`;
-};
 
 const requestArticleEditAccess = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
