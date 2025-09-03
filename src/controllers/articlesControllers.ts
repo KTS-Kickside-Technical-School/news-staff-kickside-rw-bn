@@ -278,10 +278,11 @@ const journalistAnalytics = async (req: any, res: Response): Promise<any> => {
 const getAuthorProfile = async (req: any, res: Response): Promise<any> => {
     try {
         const { username } = req.params;
+        const { language } = req.query
         const user = await authRepositories.findUserByUsernames(username);
         const plainUser = user.toJSON()
         delete plainUser.password;
-        const articles = await authRepositories.findArticlesByAuthor(user._id);
+        const articles = await authRepositories.findArticlesByAuthor(user._id, language);
         const relatedJournalists = await authRepositories.findRelatedJournalists(user._id);
 
         return res.status(200).json({
