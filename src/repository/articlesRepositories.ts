@@ -761,7 +761,6 @@ const searchArticles = async ({
 
     const buildConditions = (text: string) => [
         { title: buildRegex(text) },
-        { content: buildRegex(text) },
         { category: buildRegex(text) },
     ];
 
@@ -770,26 +769,26 @@ const searchArticles = async ({
         language: language,
         $or: buildConditions(q),
     })
-        .populate('author')
+        .populate('author').sort({ createdAt: -1 })
         .lean();
 
     if (results.length === 0 && words.length > 0) {
         const wordConditions = words.flatMap((w) => buildConditions(w));
         results = await Article.find({
-            status: 'Published',
+            status: 'published',
             $or: wordConditions,
         })
-            .populate('author')
+            .populate('author').sort({ createdAt: -1 })
             .lean();
     }
 
     if (results.length < minResults) {
         const fillers = await Article.find({
-            status: 'Published',
+            status: 'published',
             _id: { $nin: results.map((r) => r._id) },
         })
             .limit(minResults - results.length)
-            .populate('author')
+            .populate('author').sort({ createdAt: -1 })
             .lean();
 
         results = [...results, ...fillers];
