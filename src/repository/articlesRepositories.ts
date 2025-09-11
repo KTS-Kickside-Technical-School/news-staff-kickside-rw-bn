@@ -764,6 +764,7 @@ const searchArticles = async ({
         { category: buildRegex(text) },
     ];
 
+
     let results = await Article.find({
         status: 'published',
         language: language,
@@ -776,6 +777,7 @@ const searchArticles = async ({
         const wordConditions = words.flatMap((w) => buildConditions(w));
         results = await Article.find({
             status: 'published',
+            language: language,
             $or: wordConditions,
         })
             .populate('author').sort({ createdAt: -1 })
@@ -785,6 +787,8 @@ const searchArticles = async ({
     if (results.length < minResults) {
         const fillers = await Article.find({
             status: 'published',
+            language: language,
+
             _id: { $nin: results.map((r) => r._id) },
         })
             .limit(minResults - results.length)
