@@ -670,6 +670,10 @@ const findArticlesByCategoryWithWeeklyTop = async (language: any) => {
     const distinctCategories = await Article.distinct("category", {
         status: "published",
         language: language
+    }, {
+        $group: {
+            _id: { $toLower: "$category" } // normalize categories
+        }
     });
 
     if (distinctCategories.length === 0) {
