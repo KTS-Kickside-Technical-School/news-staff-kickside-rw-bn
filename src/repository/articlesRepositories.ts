@@ -670,6 +670,10 @@ const findArticlesByCategoryWithWeeklyTop = async (language: any) => {
     const distinctCategories = await Article.distinct("category", {
         status: "published",
         language: language
+    }, {
+        $group: {
+            _id: { $toLower: "$category" } // normalize categories
+        }
     });
 
     if (distinctCategories.length === 0) {
@@ -761,35 +765,38 @@ const searchArticles = async ({
 
     const buildConditions = (text: string) => [
         { title: buildRegex(text) },
-        { content: buildRegex(text) },
         { category: buildRegex(text) },
     ];
+
 
     let results = await Article.find({
         status: 'published',
         language: language,
         $or: buildConditions(q),
     })
-        .populate('author')
+        .populate('author').sort({ createdAt: -1 })
         .lean();
 
     if (results.length === 0 && words.length > 0) {
         const wordConditions = words.flatMap((w) => buildConditions(w));
         results = await Article.find({
-            status: 'Published',
+            status: 'published',
+            language: language,
             $or: wordConditions,
         })
-            .populate('author')
+            .populate('author').sort({ createdAt: -1 })
             .lean();
     }
 
     if (results.length < minResults) {
         const fillers = await Article.find({
-            status: 'Published',
+            status: 'published',
+            language: language,
+
             _id: { $nin: results.map((r) => r._id) },
         })
             .limit(minResults - results.length)
-            .populate('author')
+            .populate('author').sort({ createdAt: -1 })
             .lean();
 
         results = [...results, ...fillers];

@@ -8,6 +8,7 @@ import TeamPlayer from "../database/models/teamPlayer";
 import Tournament, { ITournament } from "../database/models/tournament";
 import TournamentPerYear, { ITournamentPerYear } from "../database/models/tournamentPerYear";
 import Year, { IYears } from "../database/models/years";
+import { last5days, now, fiveDaysLater, threeDaysAgo } from "../helpers/trHelpers";
 
 const createCountry = async (data: ICountry) => {
     return await Country.create(data);
@@ -375,14 +376,8 @@ const findAllMatches = async (filters: any) => {
 
 
 const findHomepageMatches = async () => {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const twoDaysLater = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
-    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
 
-    // Step 1: Try yesterday finished/postponed + next 2 days any status except finished
     let matches = await Match.aggregate([
-        // Convert matchTime string → Date
         {
             $addFields: {
                 matchTimeDate: {
@@ -393,16 +388,13 @@ const findHomepageMatches = async () => {
         {
             $match: {
                 $or: [
-                    // finished or postponed yesterday
                     {
                         status: { $in: ["finished", "postponed"] },
-                        matchTimeDate: { $gte: yesterday, $lt: now }
+                        matchTimeDate: { $gte: last5days, $lt: now }
                     },
-
-                    // any upcoming (not finished) within next 2 days
                     {
                         status: { $ne: "finished" },
-                        matchTimeDate: { $gte: now, $lte: twoDaysLater }
+                        matchTimeDate: { $gte: now, $lte: fiveDaysLater }
                     }
                 ]
             }
@@ -449,7 +441,7 @@ const findHomepageMatches = async () => {
             }
         },
         { $unwind: "$tournamentSeason" },
-        // NEW: Lookup the main tournament document
+
         {
             $lookup: {
                 from: "tournaments",
@@ -463,7 +455,7 @@ const findHomepageMatches = async () => {
             $group: {
                 _id: "$tournamentSeason.name",
                 tournamentSeason: { $first: "$tournamentSeason" },
-                tournament: { $first: "$tournament" }, // Add main tournament to group
+                tournament: { $first: "$tournament" },
                 matches: {
                     $push: {
                         _id: "$_id",
@@ -472,10 +464,11 @@ const findHomepageMatches = async () => {
                         homeScore: "$homeScore",
                         awayScore: "$awayScore",
                         status: "$status",
+                        slug: "$slug",
                         matchTime: "$matchTime",
                         matchTimeDate: "$matchTimeDate",
                         statusOrder: "$statusOrder",
-                        tournament: "$tournament" // Include tournament in each match
+                        tournament: "$tournament"
                     }
                 }
             }
@@ -485,7 +478,7 @@ const findHomepageMatches = async () => {
                 _id: 0,
                 tournamentName: "$_id",
                 tournamentSeason: 1,
-                tournament: 1, // Include main tournament
+                tournament: 1,
                 matches: 1
             }
         },
