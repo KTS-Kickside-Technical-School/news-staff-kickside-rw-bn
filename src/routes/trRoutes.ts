@@ -23,9 +23,8 @@ trRoutes.get("/tr", userAuthorization(["Admin", "Editor", "Journalist"]), countr
 
 trRoutes.post("/new-tr-season", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newTournamentSeasonSchema), isTournamentSeasonAlreadyExists, countriesController.saveTournamentSeason);
 trRoutes.get("/tr-seasons", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllTournamentsSeasons);
-trRoutes.get("/tr-season/:id", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
+trRoutes.get("/tr-season/:slug", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
 trRoutes.get("/tr-latest-seasons", tournamanetsController.getLatestSeasons)
-trRoutes.get('/:slug/matches', isSeasonExistBySlug, tournamanetsController.getTournamentSeasonMatches)
 
 trRoutes.post("/new-match", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newMatchSchema), isMatchAlreadyExists, countriesController.saveMatch);
 trRoutes.get("/matches", tournamanetsController.getAllMatches);
@@ -34,6 +33,7 @@ trRoutes.get("/match-info/:id", userAuthorization(["Admin", "Editor", "Journalis
 trRoutes.put("/match-update/:id", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(updateMatchSchema), isMatchExists, tournamanetsController.updateMatch);
 trRoutes.post("/new-match-event", userAuthorization(["Admin", "Editor", "Journalist"]), isMatchExists, tournamanetsController.saveMatchEvent);
 trRoutes.get("/full-match/:slug", isMatchExistsBySlug, tournamanetsController.getSingleMatch);
+trRoutes.get('/:slug/matches', isSeasonExistBySlug, tournamanetsController.getTournamentSeasonMatches)
 
 trRoutes.post("/new-player", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newPlayerSchema), tournamanetsController.savePlayer);
 trRoutes.get("/players", userAuthorization(["Admin", "Editor", "Journalist"]), tournamanetsController.getAllPlayers);

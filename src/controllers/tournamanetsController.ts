@@ -216,7 +216,10 @@ const getSingleTournamentSeason = async (req: any, res: Response): Promise<any> 
         return res.status(200).json({
             status: 200,
             message: 'Tournament season retrieved successfully',
-            data: req.season
+            data: {
+                season: req.season,
+                matches: req.matches
+            }
         })
     } catch (error) {
         console.error(error)

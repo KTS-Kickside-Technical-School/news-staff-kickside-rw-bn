@@ -80,7 +80,7 @@ export const isTournamentSeasonAlreadyExists = async (req: any, res: Response, n
 
 export const isTournamentSeasonExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
-        const season = await tournamentsRepositories.findTournamentSeasonById(req.params.id);
+        const season = await tournamentsRepositories.findSeasonBySlug(req.params.slug);
 
         if (!season) {
             return res.status(404).json({
@@ -88,7 +88,12 @@ export const isTournamentSeasonExists = async (req: any, res: Response, next: Ne
                 message: "Tournament season not found"
             });
         }
+
+        const matches = await tournamentsRepositories.findMatchesByTournamentSeasonId(season._id);
+
         req.season = season
+        req.matches = matches
+
         return next()
     } catch (error) {
         console.error(error)
