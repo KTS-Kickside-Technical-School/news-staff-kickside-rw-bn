@@ -727,7 +727,10 @@ const findPlayerInTheTeamsByPlayerId = async (player: any) => {
 }
 
 const findTeamCurrentPlayers = async (team: any) => {
-    return await TeamPlayer.find({ team, stillPlaying: true }).populate("team").populate("player")
+    return await TeamPlayer.find({
+        team,
+        $or: [{ isStillPlaying: true }, { stillPlaying: true }],
+    }).populate("team").populate("player")
         .sort({
             startDate: -1,
             endDate: -1
