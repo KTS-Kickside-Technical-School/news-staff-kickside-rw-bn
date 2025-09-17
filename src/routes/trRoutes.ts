@@ -5,6 +5,9 @@ import { newCountrySchema, newMatchSchema, newPlayerSchema, newTeamPlayerSchema,
 import { userAuthorization } from "../middlewares/authorization";
 import { isCountryAlreadyExists, isMatchAlreadyExists, isMatchExists, isMatchExistsBySlug, isPlayerArleadyInTheTeam, isPlayerExists, isSeasonExistBySlug, isTeamAlreadyExists, isTournamentAlreadyExists, isTournamentSeasonAlreadyExists, isTournamentSeasonExists, isYearAlreadyExists } from "../middlewares/tournamentsMiddlewares";
 import tournamanetsController from "../controllers/tournamanetsController";
+import { isTeamExists } from "../middlewares/teamMiddleware";
+import { newTeamPlayerInfoSchema } from "../validations/teamValidations";
+import teamControllers from "../controllers/teamControllers";
 
 const trRoutes = express.Router();
 
@@ -13,7 +16,9 @@ trRoutes.get("/countries", countriesController.getAllCountries);
 
 trRoutes.post("/new-team", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newTeamSchema), isTeamAlreadyExists, countriesController.saveTeam);
 trRoutes.get("/teams", countriesController.getAllTeams);
-
+trRoutes.get("/teams/single-team/:id", isTeamExists, teamControllers.getTeam);
+trRoutes.get("/teams/get-team-players/:id", isTeamExists, teamControllers.getTeamPLayers);
+trRoutes.post("/teams/save-new-team-player-info", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newTeamPlayerInfoSchema), isTeamExists, teamControllers.saveNewTeamPlayerInfo);
 
 trRoutes.post("/new-year", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newYearSchema), isYearAlreadyExists, countriesController.saveYear);
 trRoutes.get("/years", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllYears);

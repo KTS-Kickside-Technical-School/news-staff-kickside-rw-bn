@@ -168,7 +168,7 @@ export const isPlayerArleadyInTheTeam = async (req: any, res: Response, next: Ne
         const { player, team } = req.body
         const PlayerInTheTeam = await tournamentsRepositories.findPlayerInTheTeamByPlayerAndTeamAndTrue(player, team)
 
-        if (PlayerInTheTeam && PlayerInTheTeam.stillPlaying === true) {
+        if (PlayerInTheTeam && PlayerInTheTeam.isStillPlaying === true) {
             return res.status(400).json({
                 status: 400,
                 message: "Player already in the team"
