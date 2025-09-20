@@ -52,7 +52,9 @@ export const updateMatchSchema = Joi.object({
     homeScore: Joi.number(),
     awayScore: Joi.number(),
     matchTime: Joi.string(),
-    matchDuration: Joi.string(),
+    matchDuration: Joi.number(),
+    venue: Joi.string(),
+    referee: Joi.string(),
     status: Joi.string(),
 })
 
@@ -69,6 +71,6 @@ export const newTeamPlayerSchema = Joi.object({
     player: Joi.string().required(),
     startDate: Joi.date().required(),
     endDate: Joi.date().required(),
-    stillPlaying: Joi.boolean().required(),
+    isStillPlaying: Joi.boolean().required(),
     jerseyNumber: Joi.number().required(),
 })

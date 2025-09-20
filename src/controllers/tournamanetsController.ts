@@ -107,7 +107,7 @@ const saveYear = async (req: Request, res: Response): Promise<any> => {
 
 const saveTournament = async (req: Request, res: Response): Promise<any> => {
     try {
-        console.log(req.body)
+
         const tournament = await tournamentsRepositories.createTournament(req.body);
         return res.status(201).json({
             status: 201,
@@ -216,7 +216,10 @@ const getSingleTournamentSeason = async (req: any, res: Response): Promise<any> 
         return res.status(200).json({
             status: 200,
             message: 'Tournament season retrieved successfully',
-            data: req.season
+            data: {
+                season: req.season,
+                matches: req.matches
+            }
         })
     } catch (error) {
         console.error(error)
@@ -463,7 +466,7 @@ const saveMatchEvent = async (req: any, res: Response): Promise<any> => {
             data: matchEvent,
         });
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
         return res.status(500).json({
             status: 500,
             message: error.message || "Error saving match event",
@@ -485,6 +488,7 @@ const getTournamentSeasonMatches = async (req: any, res: Response): Promise<any>
         })
     }
 }
+
 
 export default {
     saveCountry,

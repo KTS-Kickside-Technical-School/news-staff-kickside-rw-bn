@@ -3,10 +3,13 @@ import mongoose from "mongoose";
 export interface iTeamPlayer {
     team: mongoose.Schema.Types.ObjectId;
     player: mongoose.Schema.Types.ObjectId;
-    startDate: Date;
-    endDate: Date;
-    stillPlaying: boolean;
-    jerseyNumber: number;
+    jerseyNumber?: number;
+    position?: string;
+    playerValue?: number;
+    constractStatus?: string;
+    contractStartDate?: Date;
+    contractEndDate?: Date;
+    isStillPlaying: boolean;
 }
 
 const TeamPlayerSchema = new mongoose.Schema<iTeamPlayer>({
@@ -20,19 +23,31 @@ const TeamPlayerSchema = new mongoose.Schema<iTeamPlayer>({
         ref: "Player",
         required: true,
     },
-    startDate: {
-        type: Date,
-        required: true,
+    jerseyNumber: {
+        type: Number,
+        required: false,
     },
-    endDate: {
+    position: {
+        type: String,
+        required: false,
+    },
+    playerValue: {
+        type: Number,
+        required: false,
+    },
+    constractStatus: {
+        type: String,
+        required: false,
+    },
+    contractStartDate: {
         type: Date,
         required: false,
     },
-    jerseyNumber: {
-        type: Number,
-        required: true,
+    contractEndDate: {
+        type: Date,
+        required: false,
     },
-    stillPlaying: {
+    isStillPlaying: {
         type: Boolean,
         required: true,
     }

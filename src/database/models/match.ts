@@ -21,6 +21,8 @@ const matchSchema = new Schema({
     awayScore: { type: Number, default: 0 },
     matchDuration: { type: Number, default: 90 },
     matchTime: { type: String, default: Date.now },
+    venue: { type: String, default: 'Unknown' },
+    referee: { type: String, default: 'Unknown' },
     status: {
         type: String, default: 'scheduled',
         enum: ['scheduled', 'in_progress', 'finished', 'postponed']

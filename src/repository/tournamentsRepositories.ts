@@ -154,8 +154,10 @@ const findAllTournamentsSeasons = async () => {
                 startDate: { $first: '$startDate' },
                 endDate: { $first: '$endDate' },
                 status: { $first: '$status' },
+                slug: { $first: '$slug' },
                 teams: { $push: '$teams' },
-                isLatest: { $first: '$isLatest' }
+                isLatest: { $first: '$isLatest' },
+                isFeatured: { $first: '$isFeatured' }
             }
         },
 
@@ -280,7 +282,19 @@ const findLatestTournamentsSeasons = async () => {
 
 
 
-const findTournamentSeasonById = async (id: string) => {
+const findSeasonBySlug = async (slug: any) => {
+    return await TournamentPerYear.findOne({ slug })
+        .populate("year")
+        .populate({
+            path: "tournament",
+            populate: {
+                path: "country",
+            },
+        }).populate("teams");
+};
+
+
+const findTournamentSeasonById = async (id: any) => {
     return await TournamentPerYear.findOne({ _id: id }).populate("year");
 }
 
@@ -714,7 +728,10 @@ const findPlayerInTheTeamsByPlayerId = async (player: any) => {
 }
 
 const findTeamCurrentPlayers = async (team: any) => {
-    return await TeamPlayer.find({ team, stillPlaying: true }).populate("team").populate("player")
+    return await TeamPlayer.find({
+        team,
+        $or: [{ isStillPlaying: true }, { stillPlaying: true }],
+    }).populate("team").populate("player")
         .sort({
             startDate: -1,
             endDate: -1
@@ -725,8 +742,11 @@ const saveMatchEvent = async (data: any) => {
     return await MatchActivities.create(data)
 }
 
-const findSeasonBySlug = async (slug: string) => {
-    return await TournamentPerYear.findOne({ slug }).populate("tournament").populate("teams");
+const findMatchesByTournamentSeasonId = async (tournamentSeason: any) => {
+    return await Match.find({ tournamentSeason })
+        .populate("homeTeam")
+        .populate("awayTeam")
+        .populate("tournamentSeason")
 }
 
 const updatePlayerInTheTeam = async (_id: string, data: any) => {
@@ -772,5 +792,6 @@ export default {
     saveMatchEvent,
     findLatestTournamentsSeasons,
     findSeasonBySlug,
-    setSeasonsUnLatestByTournament
+    setSeasonsUnLatestByTournament,
+    findMatchesByTournamentSeasonId
 }
