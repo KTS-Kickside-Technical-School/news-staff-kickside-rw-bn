@@ -8,6 +8,7 @@ import tournamanetsController from "../controllers/tournamanetsController";
 import { isTeamExists } from "../middlewares/teamMiddleware";
 import { newTeamPlayerInfoSchema } from "../validations/teamValidations";
 import teamControllers from "../controllers/teamControllers";
+import seasonsControllers from "../controllers/seasonsControllers";
 
 const trRoutes = express.Router();
 
@@ -30,6 +31,8 @@ trRoutes.post("/new-tr-season", userAuthorization(["Admin", "Editor", "Journalis
 trRoutes.get("/tr-seasons", userAuthorization(["Admin", "Editor", "Journalist"]), countriesController.getAllTournamentsSeasons);
 trRoutes.get("/tr-season/:slug", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, countriesController.getSingleTournamentSeason);
 trRoutes.get("/tr-latest-seasons", tournamanetsController.getLatestSeasons)
+trRoutes.put("/tr-season/set-featured-season/:slug", userAuthorization(["Admin", "Editor", "Journalist"]), isTournamentSeasonExists, seasonsControllers.setFeaturedSeason)
+trRoutes.get("/tr-season/season/get-1-featured-season", seasonsControllers.getFeaturedSeason)
 
 trRoutes.post("/new-match", userAuthorization(["Admin", "Editor", "Journalist"]), bodyValidation(newMatchSchema), isMatchAlreadyExists, countriesController.saveMatch);
 trRoutes.get("/matches", tournamanetsController.getAllMatches);

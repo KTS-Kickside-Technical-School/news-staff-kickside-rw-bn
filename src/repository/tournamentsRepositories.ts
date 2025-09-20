@@ -156,7 +156,8 @@ const findAllTournamentsSeasons = async () => {
                 status: { $first: '$status' },
                 slug: { $first: '$slug' },
                 teams: { $push: '$teams' },
-                isLatest: { $first: '$isLatest' }
+                isLatest: { $first: '$isLatest' },
+                isFeatured: { $first: '$isFeatured' }
             }
         },
 

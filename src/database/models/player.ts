@@ -26,7 +26,7 @@ const PlayersSchema = new mongoose.Schema<iPlayer>({
         required: false,
         validate: {
             validator: async function (value: mongoose.Types.ObjectId) {
-                if (!value) return true; // Allow empty/null values
+                if (!value) return true; 
                 const country = await mongoose.model('Country').findById(value);
                 return country !== null;
             },

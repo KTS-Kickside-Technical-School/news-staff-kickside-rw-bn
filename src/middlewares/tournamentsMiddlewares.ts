@@ -80,6 +80,7 @@ export const isTournamentSeasonAlreadyExists = async (req: any, res: Response, n
 
 export const isTournamentSeasonExists = async (req: any, res: Response, next: NextFunction): Promise<any> => {
     try {
+
         const season = await tournamentsRepositories.findSeasonBySlug(req.params.slug);
 
         if (!season) {
