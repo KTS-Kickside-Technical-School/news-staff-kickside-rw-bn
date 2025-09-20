@@ -52,7 +52,9 @@ export const updateMatchSchema = Joi.object({
     homeScore: Joi.number(),
     awayScore: Joi.number(),
     matchTime: Joi.string(),
-    matchDuration: Joi.string(),
+    matchDuration: Joi.number(),
+    venue: Joi.string(),
+    referee: Joi.string(),
     status: Joi.string(),
 })
 
