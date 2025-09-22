@@ -20,11 +20,10 @@ const setFeaturedSeason = async (req: any, res: any): Promise<any> => {
 
 const getFeaturedSeason = async (req: any, res: any): Promise<any> => {
     try {
-        console.log("SD")
         const season = await seasonRepositories.findTournamentSeasonByAttribute("isFeatured", "true");
         const matches = await tournamentsRepositories.findAllMatches({ tournament: season._id })
         const topScorers = await seasonRepositories.findSeasonTopScorersSimplified(season._id)
-
+console.log(topScorers)
         return res.status(200).json({
             status: 200,
             message: 'Tournament set featured successfully',
