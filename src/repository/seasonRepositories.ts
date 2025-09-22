@@ -82,7 +82,6 @@ const findSeasonTopScorersSimplified = async (seasonId: any) => {
             }
         },
         { $set: { teamPlayerInfo: { $arrayElemAt: ['$teamPlayerInfo', 0] } } },
-        // fetch team
         {
             $lookup: {
                 from: 'teams',
