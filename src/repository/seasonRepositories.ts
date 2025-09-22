@@ -44,6 +44,7 @@ const findSeasonTopScorersSimplified = async (seasonId: any) => {
                 matches: { $addToSet: '$match' }
             }
         },
+        // fetch player info
         {
             $lookup: {
                 from: 'players',
@@ -52,23 +53,35 @@ const findSeasonTopScorersSimplified = async (seasonId: any) => {
                 as: 'playerInfo'
             }
         },
-        {
-            $unwind: '$playerInfo'
-        },
+        { $set: { playerInfo: { $arrayElemAt: ['$playerInfo', 0] } } },
+        // fetch only the latest teamplayer entry
         {
             $lookup: {
                 from: 'teamplayers',
-                localField: '_id',
-                foreignField: 'player',
+                let: { playerId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$player', '$$playerId'] },
+                                    {
+                                        $or: [
+                                            { $eq: ['$isStillPlaying', true] },
+                                            { $eq: ['$stillPlaying', true] }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    { $sort: { contractStartDate: -1 } },
+                    { $limit: 1 }
+                ],
                 as: 'teamPlayerInfo'
             }
         },
-        {
-            $unwind: {
-                path: '$teamPlayerInfo',
-                preserveNullAndEmptyArrays: true
-            }
-        },
+        { $set: { teamPlayerInfo: { $arrayElemAt: ['$teamPlayerInfo', 0] } } },
         {
             $lookup: {
                 from: 'teams',
@@ -77,12 +90,8 @@ const findSeasonTopScorersSimplified = async (seasonId: any) => {
                 as: 'teamInfo'
             }
         },
-        {
-            $unwind: {
-                path: '$teamInfo',
-                preserveNullAndEmptyArrays: true
-            }
-        },
+        { $set: { teamInfo: { $arrayElemAt: ['$teamInfo', 0] } } },
+        // shape response
         {
             $project: {
                 playerId: '$_id',
@@ -113,16 +122,13 @@ const findSeasonTopScorersSimplified = async (seasonId: any) => {
                 }
             }
         },
-        {
-            $sort: { goals: -1, matchesPlayed: 1, goalsPerMatch: -1 }
-        },
-        {
-            $limit: 20
-        }
+        { $sort: { goals: -1, matchesPlayed: 1, goalsPerMatch: -1 } },
+        { $limit: 20 }
     ]);
 
     return topScorers;
 };
+
 
 export default {
     setSeasonsUnFeaturedById,
